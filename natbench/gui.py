@@ -9,8 +9,18 @@ from __future__ import annotations
 
 import threading
 import time
-import tkinter as tk
-from tkinter import messagebox, ttk, filedialog
+
+try:
+    import tkinter as tk
+    from tkinter import messagebox, ttk, filedialog
+except ImportError as _tk_err:
+    raise SystemExit(
+        "tkinter is not available. Install it first:\n"
+        "  Arch/CachyOS:    sudo pacman -S tk\n"
+        "  Debian/Ubuntu:   sudo apt install python3-tk\n"
+        "  Fedora:          sudo dnf install python3-tkinter\n"
+        f"Original error: {_tk_err}"
+    ) from None
 from typing import Optional
 
 # ---------------------------------------------------------------------------

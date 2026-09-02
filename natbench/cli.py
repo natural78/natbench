@@ -216,28 +216,48 @@ def _select_servers(
         pool = extra
         extra = []
     else:
-        # Treat as comma-separated IPs
+        # Treat as comma/space-separated server names or IPs
         pool = []
-        for entry in arg.split(","):
+        seen_names: set[str] = set()
+        for entry in arg.replace(" ", ",").split(","):
             entry = entry.strip()
             if not entry:
                 continue
-            parts = entry.split(":", 1)
-            ip = parts[0]
-            port = int(parts[1]) if len(parts) > 1 else 53
-            pool.append({
-                "name": ip,
-                "ip4": ip,
-                "ip6": None,
-                "doh_url": None,
-                "dot_host": None,
-                "dot_port": 853,
-                "port": port,
-                "country": "??",
-                "operator": "Custom",
-                "tags": ["custom"],
-                "description_en": "User-specified server.",
-            })
+            entry_lower = entry.lower()
+            # Try name/operator substring match against SERVER_DB first
+            matched = [
+                s for s in SERVER_DB
+                if entry_lower in s.get("name", "").lower()
+                or entry_lower in s.get("operator", "").lower()
+                or entry == s.get("ip4", "")
+                or entry == s.get("dot_host", "")
+            ]
+            if matched:
+                for s in matched:
+                    if s["name"] not in seen_names:
+                        pool.append(s)
+                        seen_names.add(s["name"])
+            else:
+                # Fall back to raw IP[:port]
+                parts = entry.split(":", 1)
+                ip = parts[0]
+                port = int(parts[1]) if len(parts) > 1 else 53
+                name = ip
+                if name not in seen_names:
+                    pool.append({
+                        "name": name,
+                        "ip4": ip,
+                        "ip6": None,
+                        "doh_url": None,
+                        "dot_host": None,
+                        "dot_port": 853,
+                        "port": port,
+                        "country": "??",
+                        "operator": "Custom",
+                        "tags": ["custom"],
+                        "description_en": "User-specified server.",
+                    })
+                    seen_names.add(name)
 
     # Filter by protocol capability
     if protocol == "dot":
@@ -478,12 +498,13 @@ def _build_parser(lang: str) -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--servers", "-s",
-        default="all",
+        nargs="+",
+        default=["all"],
         metavar="FILTER_OR_IPS",
         help=(
             "Which servers to benchmark. "
             "One of: all, fast, secure, custom, "
-            "or a comma-separated list of IP[:PORT] addresses (default: all)."
+            "or space/comma-separated server names or IP[:PORT] addresses (default: all)."
         ),
     )
     parser.add_argument(
@@ -508,6 +529,11 @@ def _build_parser(lang: str) -> argparse.ArgumentParser:
         "--show-dns",
         action="store_true",
         help="Show the current system DNS configuration and exit.",
+    )
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        help="Launch the graphical (Tkinter) interface.",
     )
     parser.add_argument(
         "--lang", "-l",
@@ -675,7 +701,7 @@ def main() -> int:
             "count": args.count,
             "timeout": args.timeout,
             "workers": args.workers,
-            "servers": args.servers,
+            "servers": ",".join(args.servers) if isinstance(args.servers, list) else args.servers,
             "top": args.top,
             "include_system_dns": not getattr(args, "no_system_dns", False),
             "scorer": "default",
@@ -783,6 +809,16 @@ def main() -> int:
             )
         return 0
 
+    # --- --gui ---
+    if getattr(args, "gui", False):
+        try:
+            from .gui import main as _gui_main
+        except SystemExit as exc:
+            print(str(exc))
+            return 1
+        _gui_main()
+        return 0
+
     # --- --show-dns ---
     if args.show_dns:
         cfg = get_current_dns()
@@ -866,7 +902,8 @@ def main() -> int:
                 print()
 
     # --- Select server pool ---
-    pool = _select_servers(args.servers, args.protocol, args.add_server or [])
+    servers_str = ",".join(args.servers) if isinstance(args.servers, list) else args.servers
+    pool = _select_servers(servers_str, args.protocol, args.add_server or [])
 
     # Prepend system DNS (deduplicated by IP)
     if system_servers:
