@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.backends.legacy:build"
 
 [project]
-name = "dnsmark"
+name = "natbench"
 dynamic = ["version"]
 description = "Cross-platform DNS benchmark, analyser and optimizer"
 readme = "README.md"
@@ -53,24 +53,24 @@ dev = [
 ]
 
 [project.urls]
-Homepage      = "https://natural.yt/dnsmark"
-Repository    = "https://github.com/natural78/dnsmark"
-Documentation = "https://natural.yt/dnsmark/docs"
-"Bug Tracker" = "https://github.com/natural78/dnsmark/issues"
+Homepage      = "https://natural.yt/natbench"
+Repository    = "https://github.com/natural78/natbench"
+Documentation = "https://natural.yt/natbench/docs"
+"Bug Tracker" = "https://github.com/natural78/natbench/issues"
 
 [project.scripts]
-dnsmark     = "dnsmark.cli:main"
-dnsmark-gui = "dnsmark.gui:main"
+natbench     = "natbench.cli:main"
+natbench-gui = "natbench.gui:main"
 
 [tool.setuptools.dynamic]
-version = { attr = "dnsmark.__version__.__version__" }
+version = { attr = "natbench.__version__.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["dnsmark*"]
+include = ["natbench*"]
 
 [tool.setuptools.package-data]
-dnsmark = [
+natbench = [
     "locales/*.json",
     "plugins/**/*.py",
     "py.typed",
@@ -82,7 +82,7 @@ addopts   = "-v --tb=short"
 timeout   = 30
 
 [tool.coverage.run]
-source = ["dnsmark"]
+source = ["natbench"]
 omit   = ["tests/*", "examples/*"]
 
 [tool.coverage.report]

@@ -1,7 +1,7 @@
-# DNSMark Plugin Author Guide
+# NatBench Plugin Author Guide
 
 This guide covers everything you need to know to write, install, and test
-DNSMark plugins.
+NatBench plugins.
 
 ---
 
@@ -22,7 +22,7 @@ DNSMark plugins.
 
 ## Overview of Plugin Types
 
-DNSMark supports five plugin types:
+NatBench supports five plugin types:
 
 | Type       | ABC                   | Registration Key | What it does                           |
 |------------|----------------------|-----------------|----------------------------------------|
@@ -43,7 +43,7 @@ Every plugin module **must** expose a top-level `PLUGIN_INFO` dict:
 ```python
 PLUGIN_INFO = {
     "name":        "My DoQ Resolver",      # human-readable display name
-    "version":     "1.2.0",               # plugin's own semver (not DNSMark's)
+    "version":     "1.2.0",               # plugin's own semver (not NatBench's)
     "api_version": "1.0",                 # must match MAJOR of PLUGIN_API_VERSION
     "author":      "Alice <a@example.com>",
     "description": "DNS-over-QUIC resolver via aioquic",
@@ -70,7 +70,7 @@ PLUGIN_INFO = {
 |---------------|----------|-------------------------------------------------|
 | `name`        | Yes      | Human-readable plugin name                      |
 | `version`     | Yes      | Plugin semver string                            |
-| `api_version` | Yes      | DNSMark plugin API version (e.g. `"1.0"`)      |
+| `api_version` | Yes      | NatBench plugin API version (e.g. `"1.0"`)      |
 | `type`        | Yes      | One of the five type strings above              |
 | `protocol`    | Resolver | Registration key for this resolver              |
 | `format`      | Exporter | Registration key for this exporter              |
@@ -96,12 +96,12 @@ A resolver plugin implements one DNS transport protocol. It must:
 ### Minimal example
 
 ```python
-# ~/.dnsmark/plugins/resolvers/myproto.py
+# ~/.natbench/plugins/resolvers/myproto.py
 
 import time
 from typing import Any
-from dnsmark.plugin_base import QueryResult, ResolverPlugin
-from dnsmark.core import build_dns_query, parse_dns_response
+from natbench.plugin_base import QueryResult, ResolverPlugin
+from natbench.core import build_dns_query, parse_dns_response
 
 PLUGIN_INFO = {
     "name":        "My Custom Resolver",
@@ -173,11 +173,11 @@ Common fields (not all servers have all fields):
 An exporter plugin serialises benchmark results to a file.
 
 ```python
-# ~/.dnsmark/plugins/exporters/yaml_exporter.py
+# ~/.natbench/plugins/exporters/yaml_exporter.py
 
 import os
 from typing import Any, Optional
-from dnsmark.plugin_base import ExporterPlugin, ServerStats
+from natbench.plugin_base import ExporterPlugin, ServerStats
 
 PLUGIN_INFO = {
     "name":        "YAML Exporter",
@@ -203,7 +203,7 @@ class YamlExporter(ExporterPlugin):
 - Create parent directories with `os.makedirs(..., exist_ok=True)`.
 - Return `True` on success; raise or return `False` on failure.
 - Include the `meta` dict in output for traceability.
-- `lang` is provided for translated column headers — use `dnsmark.i18n.t()`.
+- `lang` is provided for translated column headers — use `natbench.i18n.t()`.
 
 ### `ServerStats` fields available to exporters
 
@@ -230,9 +230,9 @@ class YamlExporter(ExporterPlugin):
 A scorer computes a quality score 0–100 for a `ServerStats` object.
 
 ```python
-# ~/.dnsmark/plugins/scorers/my_scorer.py
+# ~/.natbench/plugins/scorers/my_scorer.py
 
-from dnsmark.plugin_base import ScorerPlugin, ServerStats
+from natbench.plugin_base import ScorerPlugin, ServerStats
 
 PLUGIN_INFO = {
     "name":        "My Custom Scorer",
@@ -271,10 +271,10 @@ class MyScorer(ScorerPlugin):
 A provider supplies a list of server dicts.
 
 ```python
-# ~/.dnsmark/plugins/providers/my_provider.py
+# ~/.natbench/plugins/providers/my_provider.py
 
 from typing import Any
-from dnsmark.plugin_base import ServerProviderPlugin
+from natbench.plugin_base import ServerProviderPlugin
 
 PLUGIN_INFO = {
     "name":        "My Provider",
@@ -298,10 +298,10 @@ class MyProvider(ServerProviderPlugin):
 ## Adding a Locale
 
 The simplest way to add a language is to drop a JSON file into
-`~/.dnsmark/locales/`:
+`~/.natbench/locales/`:
 
 ```
-~/.dnsmark/locales/ja.json
+~/.natbench/locales/ja.json
 ```
 
 See `examples/custom_locale.json` for the full key list and structure.
@@ -316,7 +316,7 @@ The `_meta` block is purely informational:
     "author": "Your Name",
     "version": "1.0"
   },
-  "app_name": "DNSMark",
+  "app_name": "NatBench",
   "app_tagline": "DNS ベンチマーク & アナライザ",
   ...
 }
@@ -334,28 +334,28 @@ locale will automatically fall back to the English string.
 Drop your plugin into the appropriate subdirectory:
 
 ```
-~/.dnsmark/plugins/
+~/.natbench/plugins/
   resolvers/    my_doq.py
   exporters/    yaml_exporter.py
   scorers/      my_scorer.py
   providers/    my_provider.py
 ```
 
-These are loaded automatically on every DNSMark run.
+These are loaded automatically on every NatBench run.
 
 ### Option 2: Environment variable
 
 ```bash
-export DNSMARK_PLUGIN_PATH=/path/to/my/plugins
+export NATBENCH_PLUGIN_PATH=/path/to/my/plugins
 ```
 
-DNSMark will scan `$DNSMARK_PLUGIN_PATH/resolvers/`, `.../exporters/`, etc.
+NatBench will scan `$NATBENCH_PLUGIN_PATH/resolvers/`, `.../exporters/`, etc.
 Multiple paths can be separated by `:` (POSIX) or `;` (Windows).
 
 ### Option 3: Bundled (for distribution)
 
-If you're shipping a package that adds DNSMark plugins, place them in
-`dnsmark/plugins/<type>/` in your package and ensure they're included in
+If you're shipping a package that adds NatBench plugins, place them in
+`natbench/plugins/<type>/` in your package and ensure they're included in
 `package_data`.
 
 ---
@@ -365,7 +365,7 @@ If you're shipping a package that adds DNSMark plugins, place them in
 - `PLUGIN_API_VERSION` follows semver: currently `"1.0"`.
 - Your plugin declares `"api_version": "1.0"` in `PLUGIN_INFO`.
 - The **MAJOR** part must match exactly. A plugin declaring `"0.9"` will be
-  rejected by DNSMark 1.x.
+  rejected by NatBench 1.x.
 - The **MINOR** part may differ. A plugin built for `"1.0"` will load fine
   under a future `"1.5"` runtime — the runtime offers more, never less.
 - Breaking changes to ABCs (adding abstract methods, changing signatures) will
@@ -407,7 +407,7 @@ def test_query_never_raises():
     assert result.error is not None
 
 def test_plugin_info_valid():
-    from dnsmark.plugin_loader import _validate_info
+    from natbench.plugin_loader import _validate_info
     from pathlib import Path
     from my_plugin_file import PLUGIN_INFO
     ok, reason = _validate_info(PLUGIN_INFO, Path("my_plugin_file.py"))
@@ -424,9 +424,9 @@ pytest tests/test_my_plugin.py -v
 
 ```python
 import os
-from dnsmark.plugin_loader import PluginLoader
+from natbench.plugin_loader import PluginLoader
 
-os.environ["DNSMARK_PLUGIN_PATH"] = "/path/to/your/plugins"
+os.environ["NATBENCH_PLUGIN_PATH"] = "/path/to/your/plugins"
 loader = PluginLoader()
 loader.load_all()
 assert "myproto" in loader.resolvers

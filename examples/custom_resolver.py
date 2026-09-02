@@ -1,7 +1,7 @@
 """
 examples/custom_resolver.py
 ============================
-Complete example of a custom DNS-over-QUIC (DoQ) resolver plugin for DNSMark.
+Complete example of a custom DNS-over-QUIC (DoQ) resolver plugin for NatBench.
 
 DNS-over-QUIC (RFC 9250) requires the `aioquic` library. This example shows
 the full plugin structure but returns a graceful "not installed" error since
@@ -12,19 +12,19 @@ INSTALLATION:
 
 USAGE:
     # Drop this file into your user plugin directory:
-    mkdir -p ~/.dnsmark/plugins/resolvers/
-    cp examples/custom_resolver.py ~/.dnsmark/plugins/resolvers/doq.py
+    mkdir -p ~/.natbench/plugins/resolvers/
+    cp examples/custom_resolver.py ~/.natbench/plugins/resolvers/doq.py
 
-    # Or set DNSMARK_PLUGIN_PATH:
-    export DNSMARK_PLUGIN_PATH=/path/to/your/plugins
+    # Or set NATBENCH_PLUGIN_PATH:
+    export NATBENCH_PLUGIN_PATH=/path/to/your/plugins
 
-    # Then run DNSMark with the DoQ protocol:
-    dnsmark --protocol doq
+    # Then run NatBench with the DoQ protocol:
+    natbench --protocol doq
 
 PLUGIN_INFO REFERENCE:
     - name:        Human-readable display name
-    - version:     Your plugin's semver (independent of DNSMark version)
-    - api_version: Must start with "1." for DNSMark 1.x
+    - version:     Your plugin's semver (independent of NatBench version)
+    - api_version: Must start with "1." for NatBench 1.x
     - type:        Must be "resolver" for resolver plugins
     - protocol:    Registration key — used with --protocol flag
     - requires:    List of pip packages needed (informational only)
@@ -36,12 +36,12 @@ from __future__ import annotations
 import time
 from typing import Any
 
-# DNSMark's ABC and result types
-from dnsmark.plugin_base import QueryResult, ResolverPlugin
+# NatBench's ABC and result types
+from natbench.plugin_base import QueryResult, ResolverPlugin
 
 # Import core helpers if available (they build raw DNS packets)
 try:
-    from dnsmark.core import build_dns_query, parse_dns_response
+    from natbench.core import build_dns_query, parse_dns_response
     _HAS_CORE = True
 except ImportError:
     _HAS_CORE = False

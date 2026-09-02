@@ -2,12 +2,12 @@
   "_meta": {
     "lang": "kl",
     "lang_name": "Klingon (tlhIngan Hol)",
-    "author": "DNSMark contributors",
+    "author": "NatBench contributors",
     "version": "1.0",
     "note": "Example/template locale file. Replace translations with real ones for your language."
   },
 
-  "app_name": "DNSMark",
+  "app_name": "NatBench",
   "app_tagline": "DNS Benchmark & Analyser [kl]",
   "cli_desc": "Find the fastest and most reliable DNS servers for your network [kl]",
   "bench_start": "Starting benchmark... [kl]",
@@ -44,7 +44,7 @@
   "err_no_servers": "No servers to test [kl]",
   "err_protocol": "Unknown protocol: {protocol} [kl]",
 
-  "gui_title": "DNSMark - DNS Benchmark [kl]",
+  "gui_title": "NatBench - DNS Benchmark [kl]",
   "gui_tab_bench": "Benchmark",
   "gui_tab_dns": "System DNS",
   "gui_tab_export": "Export",

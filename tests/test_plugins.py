@@ -1,5 +1,5 @@
 """
-Tests for the DNSMark plugin system.
+Tests for the NatBench plugin system.
 
 Validates:
 - PluginLoader discovers built-in plugins
@@ -16,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from dnsmark.plugin_loader import PluginLoader, _validate_info
-from dnsmark.plugin_base import (
+from natbench.plugin_loader import PluginLoader, _validate_info
+from natbench.plugin_base import (
     ExporterPlugin,
     ResolverPlugin,
     ScorerPlugin,
@@ -200,58 +200,58 @@ class TestPluginInfoValidation:
 
 class TestPluginAbcConformance:
     def test_udp_resolver_is_resolver_plugin(self):
-        from dnsmark.plugins.resolvers.udp import UdpResolver
+        from natbench.plugins.resolvers.udp import UdpResolver
         assert issubclass(UdpResolver, ResolverPlugin)
         assert UdpResolver.protocol == "udp"
 
     def test_tcp_resolver_is_resolver_plugin(self):
-        from dnsmark.plugins.resolvers.tcp import TcpResolver
+        from natbench.plugins.resolvers.tcp import TcpResolver
         assert issubclass(TcpResolver, ResolverPlugin)
         assert TcpResolver.protocol == "tcp"
 
     def test_dot_resolver_is_resolver_plugin(self):
-        from dnsmark.plugins.resolvers.dot import DotResolver
+        from natbench.plugins.resolvers.dot import DotResolver
         assert issubclass(DotResolver, ResolverPlugin)
         assert DotResolver.protocol == "dot"
 
     def test_doh_resolver_is_resolver_plugin(self):
-        from dnsmark.plugins.resolvers.doh import DohResolver
+        from natbench.plugins.resolvers.doh import DohResolver
         assert issubclass(DohResolver, ResolverPlugin)
         assert DohResolver.protocol == "doh"
 
     def test_json_exporter_is_exporter_plugin(self):
-        from dnsmark.plugins.exporters.json_exporter import JsonExporter
+        from natbench.plugins.exporters.json_exporter import JsonExporter
         assert issubclass(JsonExporter, ExporterPlugin)
         assert JsonExporter.format == "json"
         assert JsonExporter.file_extension == ".json"
 
     def test_csv_exporter_is_exporter_plugin(self):
-        from dnsmark.plugins.exporters.csv_exporter import CsvExporter
+        from natbench.plugins.exporters.csv_exporter import CsvExporter
         assert issubclass(CsvExporter, ExporterPlugin)
         assert CsvExporter.format == "csv"
 
     def test_markdown_exporter_is_exporter_plugin(self):
-        from dnsmark.plugins.exporters.markdown_exporter import MarkdownExporter
+        from natbench.plugins.exporters.markdown_exporter import MarkdownExporter
         assert issubclass(MarkdownExporter, ExporterPlugin)
         assert MarkdownExporter.format == "markdown"
 
     def test_html_exporter_is_exporter_plugin(self):
-        from dnsmark.plugins.exporters.html_exporter import HtmlExporter
+        from natbench.plugins.exporters.html_exporter import HtmlExporter
         assert issubclass(HtmlExporter, ExporterPlugin)
         assert HtmlExporter.format == "html"
 
     def test_default_scorer_is_scorer_plugin(self):
-        from dnsmark.plugins.scorers.default_scorer import DefaultScorer
+        from natbench.plugins.scorers.default_scorer import DefaultScorer
         assert issubclass(DefaultScorer, ScorerPlugin)
         assert DefaultScorer.scorer_id == "default"
 
     def test_latency_only_scorer_is_scorer_plugin(self):
-        from dnsmark.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
+        from natbench.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
         assert issubclass(LatencyOnlyScorer, ScorerPlugin)
         assert LatencyOnlyScorer.scorer_id == "latency_only"
 
     def test_builtin_provider_is_provider_plugin(self):
-        from dnsmark.plugins.providers.builtin_provider import BuiltinProvider
+        from natbench.plugins.providers.builtin_provider import BuiltinProvider
         assert issubclass(BuiltinProvider, ServerProviderPlugin)
         assert BuiltinProvider.provider_id == "builtin"
 
@@ -262,22 +262,22 @@ class TestPluginAbcConformance:
 
 class TestResolverAvailability:
     def test_udp_available_with_ip4(self, sample_server):
-        from dnsmark.plugins.resolvers.udp import UdpResolver
+        from natbench.plugins.resolvers.udp import UdpResolver
         r = UdpResolver()
         assert r.is_available(sample_server) is True
 
     def test_udp_unavailable_without_ip(self):
-        from dnsmark.plugins.resolvers.udp import UdpResolver
+        from natbench.plugins.resolvers.udp import UdpResolver
         r = UdpResolver()
         assert r.is_available({"name": "no-ip"}) is False
 
     def test_doh_available_with_url(self, sample_server):
-        from dnsmark.plugins.resolvers.doh import DohResolver
+        from natbench.plugins.resolvers.doh import DohResolver
         r = DohResolver()
         assert r.is_available(sample_server) is True
 
     def test_doh_unavailable_without_url(self):
-        from dnsmark.plugins.resolvers.doh import DohResolver
+        from natbench.plugins.resolvers.doh import DohResolver
         r = DohResolver()
         assert r.is_available({"ip4": "1.1.1.1"}) is False
 
@@ -288,18 +288,18 @@ class TestResolverAvailability:
 
 class TestBuiltinProvider:
     def test_returns_list(self):
-        from dnsmark.plugins.providers.builtin_provider import BuiltinProvider
+        from natbench.plugins.providers.builtin_provider import BuiltinProvider
         p = BuiltinProvider()
         servers = p.get_servers()
         assert isinstance(servers, list)
         assert len(servers) > 0
 
     def test_each_entry_has_name(self):
-        from dnsmark.plugins.providers.builtin_provider import BuiltinProvider
+        from natbench.plugins.providers.builtin_provider import BuiltinProvider
         p = BuiltinProvider()
         for srv in p.get_servers():
             assert "name" in srv, f"Server entry missing 'name': {srv}"
 
     def test_is_always_available(self):
-        from dnsmark.plugins.providers.builtin_provider import BuiltinProvider
+        from natbench.plugins.providers.builtin_provider import BuiltinProvider
         assert BuiltinProvider().is_available() is True

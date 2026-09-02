@@ -1,9 +1,9 @@
 # Changelog
 
-All notable changes to DNSMark are documented in this file.
+All notable changes to NatBench are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
-DNSMark uses [Semantic Versioning](https://semver.org/).
+NatBench uses [Semantic Versioning](https://semver.org/).
 
 ---
 
@@ -23,7 +23,7 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 - `success_rate` calculated per server
 - Configurable query count, timeout, and concurrency
 
-#### Built-in DNS Servers (`dnsmark/servers.py`)
+#### Built-in DNS Servers (`natbench/servers.py`)
 - 72 DNS servers across 20+ countries
 - Cloudflare (1.1.1.1, 1.0.0.1, 1.1.1.2 malware, 1.1.1.3 family)
 - Google (8.8.8.8, 8.8.4.4, 2001:4860:4860::8888)
@@ -42,7 +42,7 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 - `plugin_base.py` — ABCs for all five plugin types
 - `plugin_loader.py` — dynamic discovery, validation, and singleton loader
 - Plugin API version contract (MAJOR must match)
-- Three-tier search order: builtin → user (`~/.dnsmark`) → `DNSMARK_PLUGIN_PATH`
+- Three-tier search order: builtin → user (`~/.natbench`) → `NATBENCH_PLUGIN_PATH`
 - `PLUGIN_INFO` manifest validation at load time
 
 #### Built-in Resolver Plugins
@@ -66,13 +66,13 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 #### Built-in Provider Plugins
 - `plugins/providers/builtin_provider.py` — Returns `SERVER_DB`
 - `plugins/providers/url_provider.py` — Fetches server list from URL
-  (`DNSMARK_SERVER_URL` env var or `~/.dnsmark/config.json`)
+  (`NATBENCH_SERVER_URL` env var or `~/.natbench/config.json`)
 - `plugins/providers/file_provider.py` — Loads server list from local JSON
-  (`DNSMARK_SERVER_FILE` env var)
+  (`NATBENCH_SERVER_FILE` env var)
 
-#### Internationalization (`dnsmark/i18n.py`)
-- File-based locale system — JSON files in `dnsmark/locales/`
-- User overrides in `~/.dnsmark/locales/`
+#### Internationalization (`natbench/i18n.py`)
+- File-based locale system — JSON files in `natbench/locales/`
+- User overrides in `~/.natbench/locales/`
 - `t(key, lang, **kwargs)` with `str.format()` placeholder substitution
 - `detect_lang()` — reads `LANGUAGE`/`LANG` env vars and `locale.getdefaultlocale()`
 - `get_available_langs()` — scans builtin and user locale directories
@@ -87,14 +87,14 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 - `ro` Romanian, `tr` Turkish, `hr` Croatian
 - Non-Latin scripts (ru, uk, bg, el) use proper Unicode
 
-#### System DNS Management (`dnsmark/system.py`)
+#### System DNS Management (`natbench/system.py`)
 - `get_current_dns()` — reads system resolver (Linux/macOS/Windows)
 - `set_dns()` — writes system resolver with platform-appropriate method
 - `/etc/resolv.conf` on Linux
 - `networksetup` on macOS
 - `netsh` on Windows
 
-#### CLI (`dnsmark/cli.py`)
+#### CLI (`natbench/cli.py`)
 - Rich-powered terminal interface (falls back gracefully without Rich)
 - `--protocol` flag (udp/tcp/dot/doh)
 - `--count`, `--timeout`, `--workers` tuning
@@ -104,7 +104,7 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 - `--scorer` to select scoring algorithm
 - `--top N` to show only top N results
 
-#### GUI (`dnsmark/gui.py`)
+#### GUI (`natbench/gui.py`)
 - tkinter-based cross-platform GUI (no extra deps)
 - Tabs: Benchmark · System DNS · Export · About
 - Live progress updates during benchmark
@@ -113,9 +113,9 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 
 #### Packaging
 - `pyproject.toml` — modern setuptools packaging
-- Entry points: `dnsmark` (CLI) and `dnsmark-gui`
-- `dnsmark/__init__.py` — package namespace
-- `dnsmark/__main__.py` — `python -m dnsmark` support
+- Entry points: `natbench` (CLI) and `natbench-gui`
+- `natbench/__init__.py` — package namespace
+- `natbench/__main__.py` — `python -m natbench` support
 - Optional extras: `[rich]`, `[dev]`
 
 #### Tests
@@ -133,4 +133,4 @@ DNSMark uses [Semantic Versioning](https://semver.org/).
 
 ---
 
-[1.0.0]: https://github.com/natural78/dnsmark/releases/tag/v1.0.0
+[1.0.0]: https://github.com/natural78/natbench/releases/tag/v1.0.0

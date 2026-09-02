@@ -1,5 +1,5 @@
 """
-Tests for dnsmark.core — DNS packet helpers and scoring.
+Tests for natbench.core — DNS packet helpers and scoring.
 
 No live network calls — sockets are mocked where needed.
 """
@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from dnsmark.core import build_dns_query, parse_dns_response
+from natbench.core import build_dns_query, parse_dns_response
 
 
 # ---------------------------------------------------------------------------
@@ -161,14 +161,14 @@ class TestParseDnsResponse:
 
 class TestDefaultScorer:
     def test_score_range(self, sample_server_stats):
-        from dnsmark.plugins.scorers.default_scorer import DefaultScorer
+        from natbench.plugins.scorers.default_scorer import DefaultScorer
         scorer = DefaultScorer()
         score = scorer.score(sample_server_stats)
         assert 0.0 <= score <= 100.0
 
     def test_high_score_for_fast_reliable_server(self, sample_server):
-        from dnsmark.plugin_base import QueryResult, ServerStats
-        from dnsmark.plugins.scorers.default_scorer import DefaultScorer
+        from natbench.plugin_base import QueryResult, ServerStats
+        from natbench.plugins.scorers.default_scorer import DefaultScorer
 
         queries = [QueryResult(latency_ms=5.0, success=True, rcode=0, protocol="udp")] * 10
         stats = ServerStats(
@@ -190,8 +190,8 @@ class TestDefaultScorer:
         assert score >= 85.0, f"Expected high score for fast/reliable server, got {score}"
 
     def test_zero_score_for_total_failure(self, sample_server):
-        from dnsmark.plugin_base import QueryResult, ServerStats
-        from dnsmark.plugins.scorers.default_scorer import DefaultScorer
+        from natbench.plugin_base import QueryResult, ServerStats
+        from natbench.plugins.scorers.default_scorer import DefaultScorer
 
         queries = [QueryResult(latency_ms=None, success=False, rcode=-1, protocol="udp")] * 5
         stats = ServerStats(
@@ -210,7 +210,7 @@ class TestDefaultScorer:
         assert score == 0.0
 
     def test_weights_sum_to_one(self):
-        from dnsmark.plugins.scorers.default_scorer import DefaultScorer
+        from natbench.plugins.scorers.default_scorer import DefaultScorer
         scorer = DefaultScorer()
         total = sum(scorer.weights().values())
         assert abs(total - 1.0) < 1e-9
@@ -218,14 +218,14 @@ class TestDefaultScorer:
 
 class TestLatencyOnlyScorer:
     def test_score_range(self, sample_server_stats):
-        from dnsmark.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
+        from natbench.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
         scorer = LatencyOnlyScorer()
         score = scorer.score(sample_server_stats)
         assert 0.0 <= score <= 100.0
 
     def test_none_median_gives_zero(self, sample_server):
-        from dnsmark.plugin_base import ServerStats
-        from dnsmark.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
+        from natbench.plugin_base import ServerStats
+        from natbench.plugins.scorers.latency_only_scorer import LatencyOnlyScorer
 
         stats = ServerStats(server=sample_server, median_ms=None, success_rate=0.0)
         scorer = LatencyOnlyScorer()

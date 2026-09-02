@@ -1,5 +1,5 @@
 """
-Tests for dnsmark.i18n — locale loading, translation lookup, detection.
+Tests for natbench.i18n — locale loading, translation lookup, detection.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dnsmark import i18n
+from natbench import i18n
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class TestMissingKeyFallback:
             i18n.clear_cache()
             # Reload normally — the English file should always have the key
             result = i18n.t("app_name", "en")
-            assert result == "DNSMark"
+            assert result == "NatBench"
 
     def test_completely_unknown_key_returns_key_itself(self):
         result = i18n.t("this_key_does_not_exist_xyz", "en")
@@ -112,7 +112,7 @@ class TestMissingKeyFallback:
         result = i18n.t("app_name", "xx")
         assert isinstance(result, str)
         # Should fall back to English
-        assert result == "DNSMark"
+        assert result == "NatBench"
 
 
 # ---------------------------------------------------------------------------
@@ -204,8 +204,8 @@ class TestLoadLang:
         assert en_keys.issubset(de_keys), "German should inherit all English keys"
 
     def test_user_override_applied(self, tmp_path):
-        """User locale file at ~/.dnsmark/locales/ should override bundled strings."""
-        override_dir = tmp_path / ".dnsmark" / "locales"
+        """User locale file at ~/.natbench/locales/ should override bundled strings."""
+        override_dir = tmp_path / ".natbench" / "locales"
         override_dir.mkdir(parents=True)
         override_file = override_dir / "en.json"
         override_file.write_text(

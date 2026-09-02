@@ -1,12 +1,12 @@
 """
-pytest fixtures shared across the DNSMark test suite.
+pytest fixtures shared across the NatBench test suite.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from dnsmark.plugin_base import QueryResult, ServerStats
+from natbench.plugin_base import QueryResult, ServerStats
 
 
 # ---------------------------------------------------------------------------

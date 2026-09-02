@@ -1,7 +1,7 @@
 """
 examples/custom_exporter.py
 ============================
-Complete example of a custom YAML exporter plugin for DNSMark.
+Complete example of a custom YAML exporter plugin for NatBench.
 
 This example uses basic manual YAML serialisation so it works without any
 third-party dependencies. For production use, you may want to replace the
@@ -14,11 +14,11 @@ manual serialisation with pyyaml:
         yaml.dump(doc, fh, allow_unicode=True, default_flow_style=False)
 
 INSTALLATION:
-    mkdir -p ~/.dnsmark/plugins/exporters/
-    cp examples/custom_exporter.py ~/.dnsmark/plugins/exporters/yaml_exporter.py
+    mkdir -p ~/.natbench/plugins/exporters/
+    cp examples/custom_exporter.py ~/.natbench/plugins/exporters/yaml_exporter.py
 
     # Then export results:
-    dnsmark --export-format yaml --output results.yaml
+    natbench --export-format yaml --output results.yaml
 
 PLUGIN_INFO REFERENCE:
     - type:           Must be "exporter"
@@ -32,7 +32,7 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from dnsmark.plugin_base import ExporterPlugin, ServerStats
+from natbench.plugin_base import ExporterPlugin, ServerStats
 
 # Try to import pyyaml if available; fall back to manual serialisation
 try:
@@ -122,7 +122,7 @@ class YamlExporter(ExporterPlugin):
     """Export benchmark results to YAML.
 
     Uses pyyaml if installed, otherwise falls back to a simple manual
-    YAML serialiser that handles the basic types used by DNSMark.
+    YAML serialiser that handles the basic types used by NatBench.
     """
 
     format         = "yaml"
@@ -143,7 +143,7 @@ class YamlExporter(ExporterPlugin):
         doc = {
             "meta": {
                 "generated_at": ts,
-                "tool":         "DNSMark",
+                "tool":         "NatBench",
                 "lang":         lang,
                 "server_count": len(results),
                 **(meta or {}),
@@ -206,7 +206,7 @@ if __name__ == "__main__":
     print(f"pyyaml available: {_HAS_PYYAML}")
 
     # Create a fake ServerStats to test the exporter
-    from dnsmark.plugin_base import ServerStats
+    from natbench.plugin_base import ServerStats
 
     fake_server = {"name": "Test Server", "ip4": "1.1.1.1"}
     fake_stats = ServerStats(

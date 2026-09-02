@@ -1,8 +1,8 @@
-# DNSMark
+# NatBench
 
 **Cross-platform DNS benchmark, analyser and optimizer.**
 
-DNSMark measures the performance and reliability of DNS servers across multiple
+NatBench measures the performance and reliability of DNS servers across multiple
 protocols (UDP, TCP, DoT, DoH), ranks them by a configurable composite score,
 and can apply the best server to your system DNS configuration — all with a
 single command or a point-and-click GUI.
@@ -40,20 +40,20 @@ single command or a point-and-click GUI.
 ### From PyPI (recommended)
 
 ```bash
-pip install dnsmark
+pip install natbench
 ```
 
 ### With Rich terminal output
 
 ```bash
-pip install "dnsmark[rich]"
+pip install "natbench[rich]"
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/natural78/dnsmark.git
-cd dnsmark
+git clone https://github.com/natural78/natbench.git
+cd natbench
 pip install -e ".[rich,dev]"
 ```
 
@@ -65,46 +65,46 @@ pip install -e ".[rich,dev]"
 
 ```bash
 # Benchmark all built-in servers using UDP (default)
-dnsmark
+natbench
 
 # Use DNS-over-HTTPS
-dnsmark --protocol doh
+natbench --protocol doh
 
 # Benchmark with more queries for higher accuracy
-dnsmark --count 20 --workers 10
+natbench --count 20 --workers 10
 
 # Show top 10 results only
-dnsmark --top 10
+natbench --top 10
 
 # Export results to all formats
-dnsmark --export json,csv,html --output results
+natbench --export json,csv,html --output results
 
 # Apply best DNS server to the system
-dnsmark --apply
+natbench --apply
 
 # Use a specific language
-dnsmark --lang de
+natbench --lang de
 
 # List available protocols/exporters/scorers
-dnsmark --list-protocols
-dnsmark --list-exporters
-dnsmark --list-scorers
+natbench --list-protocols
+natbench --list-exporters
+natbench --list-scorers
 ```
 
 ### GUI
 
 ```bash
-dnsmark-gui
+natbench-gui
 # or
-python -m dnsmark --gui
+python -m natbench --gui
 ```
 
 ### Python API
 
 ```python
-from dnsmark.core import benchmark_all
-from dnsmark.servers import SERVER_DB
-from dnsmark.plugin_loader import default_loader
+from natbench.core import benchmark_all
+from natbench.servers import SERVER_DB
+from natbench.plugin_loader import default_loader
 
 loader = default_loader.load_all()
 
@@ -131,11 +131,11 @@ exporter.export(results, "my_results.html", meta={"protocol": "udp"})
 
 ## Plugin System
 
-DNSMark has a fully pluggable architecture. You can extend it by dropping a
-`.py` file into `~/.dnsmark/plugins/<type>/`:
+NatBench has a fully pluggable architecture. You can extend it by dropping a
+`.py` file into `~/.natbench/plugins/<type>/`:
 
 ```
-~/.dnsmark/
+~/.natbench/
   plugins/
     resolvers/   my_doq_resolver.py
     exporters/   yaml_exporter.py
@@ -145,7 +145,7 @@ DNSMark has a fully pluggable architecture. You can extend it by dropping a
     ja.json
 ```
 
-Or set `DNSMARK_PLUGIN_PATH` to point to your plugin directory.
+Or set `NATBENCH_PLUGIN_PATH` to point to your plugin directory.
 
 See `examples/custom_resolver.py` and `examples/custom_exporter.py` for
 complete, runnable examples. The full plugin authoring guide is in
@@ -164,13 +164,13 @@ complete, runnable examples. The full plugin authoring guide is in
 
 ## Adding a Language
 
-1. Copy `dnsmark/locales/en.json` to `~/.dnsmark/locales/<lang>.json`
+1. Copy `natbench/locales/en.json` to `~/.natbench/locales/<lang>.json`
 2. Translate the string values (not the keys)
 3. Update `_meta.lang` and `_meta.lang_name`
-4. Run `dnsmark --lang <lang>` to test
+4. Run `natbench --lang <lang>` to test
 
 To contribute your translation to the official release, open a pull request
-adding the JSON file to `dnsmark/locales/`.
+adding the JSON file to `natbench/locales/`.
 
 ---
 
