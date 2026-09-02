@@ -16,7 +16,7 @@ jobs:
   # Build matrix — Linux x86_64, Windows, macOS
   # ---------------------------------------------------------------------------
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.platform_label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,16 +24,13 @@ jobs:
         include:
           - os: ubuntu-latest
             platform_label: linux-x86_64
-            cli_artifact: natbench
-            gui_artifact: natbench-gui
+            ext: ""
           - os: windows-latest
             platform_label: windows-x86_64
-            cli_artifact: natbench.exe
-            gui_artifact: natbench-gui.exe
+            ext: ".exe"
           - os: macos-latest
             platform_label: macos-x86_64
-            cli_artifact: natbench
-            gui_artifact: natbench-gui
+            ext: ""
 
     steps:
       - name: Checkout repository
@@ -49,25 +46,29 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          # Install optional package extras so they get bundled
           pip install -e ".[dev]" || pip install -e .
 
       - name: Build binaries
         run: python build.py all
 
-      - name: Rename artifacts with platform label
-        shell: bash
+      - name: Collect artifacts (Linux/macOS)
+        if: runner.os != 'Windows'
         run: |
           mkdir -p artifacts
-          if [ -f "dist/${{ matrix.cli_artifact }}" ]; then
-            cp "dist/${{ matrix.cli_artifact }}" "artifacts/natbench-${{ matrix.platform_label }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
-          fi
-          if [ -f "dist/${{ matrix.gui_artifact }}" ]; then
-            cp "dist/${{ matrix.gui_artifact }}" "artifacts/natbench-gui-${{ matrix.platform_label }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
-          fi
+          [ -f dist/natbench ] && cp dist/natbench artifacts/natbench-${{ matrix.platform_label }}
+          [ -f dist/natbench-gui ] && cp dist/natbench-gui artifacts/natbench-gui-${{ matrix.platform_label }}
           ls -lh artifacts/
 
-      - name: Upload build artifacts
+      - name: Collect artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts | Out-Null
+          if (Test-Path dist/natbench.exe) { Copy-Item dist/natbench.exe artifacts/natbench-${{ matrix.platform_label }}.exe }
+          if (Test-Path dist/natbench-gui.exe) { Copy-Item dist/natbench-gui.exe artifacts/natbench-gui-${{ matrix.platform_label }}.exe }
+          Get-ChildItem artifacts/
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: natbench-${{ matrix.platform_label }}
@@ -75,53 +76,12 @@ jobs:
           retention-days: 30
 
   # ---------------------------------------------------------------------------
-  # Build — Linux ARM64 (ubuntu-24.04-arm runner)
-  # ---------------------------------------------------------------------------
-  build-arm64:
-    name: Build (linux-aarch64)
-    runs-on: ubuntu-24.04-arm
-    # ARM runners may not always be available; continue even if this fails
-    continue-on-error: true
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller
-          pip install -e ".[dev]" || pip install -e .
-
-      - name: Build CLI binary
-        run: python build.py cli
-
-      - name: Rename artifact
-        run: |
-          mkdir -p artifacts
-          cp dist/natbench artifacts/natbench-linux-aarch64
-
-      - name: Upload ARM64 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: natbench-linux-aarch64
-          path: artifacts/
-          retention-days: 30
-
-  # ---------------------------------------------------------------------------
-  # Release job — only runs on tag push, collects all artifacts
+  # Release job — only runs on tag push
   # ---------------------------------------------------------------------------
   release:
     name: Create GitHub Release
     needs: [build]
     runs-on: ubuntu-latest
-    # Only create a release when triggered by a version tag
     if: startsWith(github.ref, 'refs/tags/v')
 
     permissions:
@@ -135,47 +95,38 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts
-          # Download all artifacts from the build matrix
-          merge-multiple: false
+          merge-multiple: true
 
-      - name: List downloaded artifacts
-        run: find release-artifacts -type f | sort
-
-      - name: Flatten artifact files into one directory
+      - name: List and checksum
         run: |
-          mkdir -p dist-release
-          find release-artifacts -type f -exec cp {} dist-release/ \;
-          ls -lh dist-release/
-
-      - name: Generate checksums
-        run: |
-          cd dist-release
+          ls -lh release-artifacts/
+          cd release-artifacts
           sha256sum * > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
-      - name: Extract tag version
+      - name: Extract version
         id: tag
         run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.version }}
           name: "NatBench ${{ steps.tag.outputs.version }}"
           draft: false
           prerelease: ${{ contains(steps.tag.outputs.version, '-') }}
           generate_release_notes: true
-          files: |
-            dist-release/*
+          files: release-artifacts/*
           body: |
             ## NatBench ${{ steps.tag.outputs.version }}
+
+            Cross-platform DNS benchmark tool — 27 languages, 72+ servers, UDP/TCP/DoT/DoH.
 
             ### Downloads
 
             | Platform | CLI | GUI |
             |----------|-----|-----|
             | Linux x86_64 | `natbench-linux-x86_64` | `natbench-gui-linux-x86_64` |
-            | Linux ARM64  | `natbench-linux-aarch64` | — |
             | Windows x86_64 | `natbench-windows-x86_64.exe` | `natbench-gui-windows-x86_64.exe` |
             | macOS x86_64 | `natbench-macos-x86_64` | `natbench-gui-macos-x86_64` |
 
@@ -187,5 +138,11 @@ jobs:
             ### Quick start (Linux/macOS)
             ```bash
             chmod +x natbench-linux-x86_64
-            ./natbench-linux-x86_64 --help
+            ./natbench-linux-x86_64 --top 10
+            ```
+
+            ### Via pip (all platforms)
+            ```bash
+            pip install natbench
+            natbench --top 10
             ```
