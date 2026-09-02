@@ -15,7 +15,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, List
 
 
 # ---------------------------------------------------------------------------
@@ -579,3 +579,114 @@ def current_dns_summary() -> str:
     cfg = get_current_dns()
     ips = ", ".join(cfg.servers) if cfg.servers else "(none)"
     return f"{ips} ({cfg.method})"
+
+
+# ---------------------------------------------------------------------------
+# ISP / System DNS detection
+# ---------------------------------------------------------------------------
+
+
+def _classify_ip(ip: str) -> str:
+    """
+    Return a short human-readable label for a DNS IP address.
+
+    Private RFC-1918 / RFC-4193 ranges are labelled as Router/ISP;
+    well-known public resolvers get their name; everything else is labelled
+    as "ISP DNS".
+    """
+    # Known public resolvers
+    _KNOWN: dict[str, str] = {
+        "8.8.8.8":          "Google DNS",
+        "8.8.4.4":          "Google DNS",
+        "1.1.1.1":          "Cloudflare",
+        "1.0.0.1":          "Cloudflare",
+        "9.9.9.9":          "Quad9",
+        "149.112.112.112":  "Quad9",
+        "208.67.222.222":   "OpenDNS",
+        "208.67.220.220":   "OpenDNS",
+        "94.140.14.14":     "AdGuard DNS",
+        "94.140.15.15":     "AdGuard DNS",
+        "76.76.19.19":      "Alternate DNS",
+        "76.223.122.150":   "Alternate DNS",
+        "185.228.168.9":    "CleanBrowsing",
+        "185.228.169.9":    "CleanBrowsing",
+    }
+    if ip in _KNOWN:
+        return _KNOWN[ip]
+
+    # RFC-1918 / link-local / loopback → Router/ISP
+    _PRIVATE_PREFIXES = (
+        "10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.",
+        "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
+        "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
+        "169.254.", "127.",
+        # IPv6 private/loopback
+        "::1", "fc", "fd",
+    )
+    for pfx in _PRIVATE_PREFIXES:
+        if ip.startswith(pfx):
+            return "Router/ISP"
+
+    return "ISP DNS"
+
+
+def get_system_dns_servers() -> List[dict]:
+    """
+    Detect the system/ISP DNS servers and return them as a list of server
+    dicts compatible with NatBench's server pool format.
+
+    Each returned dict contains:
+        name          — human-readable label (e.g. "System DNS (Router/ISP)")
+        ip4           — IPv4 address (or None for IPv6-only)
+        ip6           — IPv6 address (or None for IPv4-only)
+        doh_url       — None (plain UDP/TCP only)
+        dot_host      — None
+        dot_port      — 853
+        port          — 53
+        country       — "??"
+        operator      — "System"
+        tags          — ["system", "auto-detected"]
+        description_en — descriptive text
+        _is_system    — True (internal marker for CLI/GUI display)
+
+    Returns an empty list if no system DNS could be detected.
+    Never raises.
+    """
+    try:
+        cfg = get_current_dns()
+    except Exception:
+        return []
+
+    results: List[dict] = []
+    seen: set[str] = set()
+
+    for ip in cfg.servers:
+        if not ip or ip in seen:
+            continue
+        seen.add(ip)
+
+        label = _classify_ip(ip)
+        is_ipv6 = ":" in ip
+
+        srv: dict = {
+            "name": f"System DNS ({label})" if label else "System DNS",
+            "ip4": None if is_ipv6 else ip,
+            "ip6": ip if is_ipv6 else None,
+            "doh_url": None,
+            "dot_host": None,
+            "dot_port": 853,
+            "port": 53,
+            "country": "??",
+            "operator": "System",
+            "tags": ["system", "auto-detected"],
+            "description_en": (
+                f"Auto-detected system/ISP DNS resolver ({ip}). "
+                f"Detected via {cfg.method}."
+            ),
+            "_is_system": True,
+            "_raw_ip": ip,
+            "_label": label,
+        }
+        results.append(srv)
+
+    return results

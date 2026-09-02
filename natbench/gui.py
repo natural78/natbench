@@ -37,8 +37,10 @@ try:
         check_root,
         get_current_dns,
         get_interfaces,
+        get_system_dns_servers,
         set_dns,
     )
+    from .updater import check_for_updates
 except ImportError:
     import sys, pathlib
     sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
@@ -50,8 +52,10 @@ except ImportError:
         check_root,
         get_current_dns,
         get_interfaces,
+        get_system_dns_servers,
         set_dns,
     )
+    from natbench.updater import check_for_updates
 
 # ---------------------------------------------------------------------------
 # Colour palette (dark theme)
@@ -216,6 +220,11 @@ class NatBenchApp:
         self._stop_event = threading.Event()
         self._custom_servers: list[dict] = []
         self._server_vars: dict[str, tk.BooleanVar] = {}
+        # Auto-detected system/ISP DNS servers
+        try:
+            self._system_dns_servers: list[dict] = get_system_dns_servers()
+        except Exception:
+            self._system_dns_servers = []
 
         # --- Root window ---
         self._root = tk.Tk()
@@ -307,7 +316,7 @@ class NatBenchApp:
                                      command=self._show_about)
         self._menu_help.add_command(
             label="Check for Updates",
-            command=lambda: self._open_url("https://github.com/natbench/natbench"),
+            command=self._check_for_updates_gui,
         )
 
     # ------------------------------------------------------------------
@@ -418,6 +427,35 @@ class NatBenchApp:
         inner.bind("<Configure>", _on_frame_configure)
         canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_win, width=e.width))
         canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))
+
+        # --- System/ISP DNS group at the top ---
+        if self._system_dns_servers:
+            grp_lbl = tk.Label(
+                inner, text=" \U0001f3e0 Your System DNS",
+                bg=C["highlight"], fg="#ffffff",
+                font=("Segoe UI", 8, "bold"),
+                anchor="w",
+            )
+            grp_lbl.pack(fill="x", pady=(2, 1))
+
+            for srv in self._system_dns_servers:
+                raw_ip = srv.get("_raw_ip", srv.get("ip4") or srv.get("ip6", "?"))
+                label = srv.get("_label", "")
+                display = f"\U0001f3e0 {raw_ip}"
+                if label:
+                    display += f" ({label})"
+                var = tk.BooleanVar(value=True)
+                # Use a unique key for system DNS vars
+                key = f"__system_{raw_ip}"
+                self._server_vars[key] = var
+                srv["_gui_key"] = key
+                cb = tk.Checkbutton(
+                    inner, text=display[:32], variable=var,
+                    bg=C["panel"], fg=C["gold"],
+                    selectcolor=C["accent"], activebackground=C["panel"],
+                    font=("Segoe UI", 8, "bold"), anchor="w",
+                )
+                cb.pack(fill="x", padx=4)
 
         for group_name, servers in _SERVER_GROUPS.items():
             if not servers:
@@ -813,10 +851,18 @@ class NatBenchApp:
         if self._bench_thread and self._bench_thread.is_alive():
             return
 
-        # Build selected server pool
-        selected = [
+        # Build selected server pool — system DNS first
+        selected: list[dict] = []
+        for srv in self._system_dns_servers:
+            key = srv.get("_gui_key", "")
+            var = self._server_vars.get(key)
+            if var and var.get():
+                selected.append(srv)
+
+        # Regular servers from SERVER_DB
+        selected += [
             srv for name, var in self._server_vars.items()
-            if var.get()
+            if var.get() and not name.startswith("__system_")
             for srv in SERVER_DB
             if srv.get("name") == name
         ]
@@ -1280,6 +1326,35 @@ class NatBenchApp:
     def _open_url(self, url: str) -> None:
         import webbrowser
         webbrowser.open(url)
+
+    def _check_for_updates_gui(self) -> None:
+        """Check GitHub for a newer release and show a messagebox."""
+        self._set_status("Checking for updates…", C["gold"])
+
+        def _worker() -> None:
+            info = check_for_updates()
+            self._root.after(0, lambda: _show_result(info))
+
+        def _show_result(info: dict) -> None:
+            self._set_status(self._t("status_idle"), C["fg_dim"])
+            if info["error"]:
+                messagebox.showwarning("NatBench", f"Update check failed:\n{info['error']}")
+            elif info["newer"]:
+                if messagebox.askyesno(
+                    "NatBench",
+                    f"New version available: {info['latest']}\n"
+                    f"Current version: {info['current']}\n\n"
+                    f"Open release page?",
+                ):
+                    self._open_url(info["url"])
+            else:
+                messagebox.showinfo(
+                    "NatBench",
+                    f"NatBench {info['current']} is up-to-date.",
+                )
+
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
 
     # ------------------------------------------------------------------
     # Run

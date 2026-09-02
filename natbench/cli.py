@@ -58,8 +58,10 @@ try:
         DnsConfig,
         check_root,
         get_current_dns,
+        get_system_dns_servers,
         set_dns,
     )
+    from .updater import check_for_updates, self_update
 except ImportError:
     # Allow running as a standalone script for quick testing
     import importlib, pathlib
@@ -78,8 +80,10 @@ except ImportError:
         DnsConfig,
         check_root,
         get_current_dns,
+        get_system_dns_servers,
         set_dns,
     )
+    from natbench.updater import check_for_updates, self_update
 
 # ---------------------------------------------------------------------------
 # Version
@@ -359,10 +363,12 @@ def _print_rich_table(
         lat_col = _latency_color(s.median_ms)
         sc_col = _score_color(s.score)
         rel_pct = f"{s.success_rate * 100:.0f}%"
+        is_system = s.server_info.get("_is_system", False)
+        display_name = f"[bold cyan]\U0001f3e0 {s.name}[/bold cyan]" if is_system else s.name
 
         table.add_row(
             str(rank),
-            s.name,
+            display_name,
             Text(_fmt_ms(s.median_ms), style=lat_col),
             Text(_fmt_ms(s.p95_ms), style=_latency_color(s.p95_ms)),
             Text(rel_pct, style="green" if s.success_rate >= 0.95 else "yellow"),
@@ -408,9 +414,11 @@ def _print_plain_table(
     print(sep)
     for rank, s in enumerate(display, 1):
         rel = f"{s.success_rate * 100:.0f}%"
+        is_system = s.server_info.get("_is_system", False)
+        display_name = (f"[{s.name}]" if is_system else s.name)[:col_w[1]]
         cells = [
             str(rank),
-            s.name[:col_w[1]],
+            display_name,
             _fmt_ms(s.median_ms),
             _fmt_ms(s.p95_ms),
             rel,
@@ -540,6 +548,29 @@ def _build_parser(lang: str) -> argparse.ArgumentParser:
         metavar="INT",
         help="Number of parallel benchmark threads (default: 16).",
     )
+    parser.add_argument(
+        "--self-update",
+        action="store_true",
+        help="Update NatBench to the latest version (git pull or pip upgrade) and exit.",
+    )
+    parser.add_argument(
+        "--check-update",
+        action="store_true",
+        help="Check GitHub for a newer NatBench release and print the result, then exit.",
+    )
+    parser.add_argument(
+        "--no-system-dns",
+        action="store_true",
+        help="Do not auto-detect and prepend system/ISP DNS servers to the benchmark.",
+    )
+    # Positional sub-command alias: "natbench update"
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default=None,
+        metavar="COMMAND",
+        help="Optional sub-command: 'update' (alias for --self-update).",
+    )
     return parser
 
 
@@ -579,6 +610,38 @@ def main() -> int:
     # Override lang from full parse
     if args.lang and args.lang.lower() in SUPPORTED_LANGS:
         lang = args.lang.lower()
+
+    # --- natbench update  /  --self-update ---
+    if getattr(args, "self_update", False) or getattr(args, "command", None) == "update":
+        return self_update(verbose=True)
+
+    # --- --check-update ---
+    if getattr(args, "check_update", False):
+        if not quiet:
+            console.print(
+                "[cyan]Checking for updates…[/cyan]" if _HAS_RICH else "Checking for updates…"
+            )
+        info = check_for_updates()
+        if info["error"]:
+            console.print(
+                f"[red]Update check failed: {info['error']}[/red]"
+                if _HAS_RICH else f"Update check failed: {info['error']}"
+            )
+            return 1
+        if info["newer"]:
+            console.print(
+                f"[green]New version available: {info['latest']} "
+                f"(current: {info['current']})[/green]\n"
+                f"[dim]{info['url']}[/dim]"
+                if _HAS_RICH
+                else f"New version available: {info['latest']} (current: {info['current']})\n{info['url']}"
+            )
+        else:
+            console.print(
+                f"[green]NatBench {info['current']} is up-to-date.[/green]"
+                if _HAS_RICH else f"NatBench {info['current']} is up-to-date."
+            )
+        return 0
 
     # --- --show-dns ---
     if args.show_dns:
@@ -639,8 +702,40 @@ def main() -> int:
     else:
         protocols = [args.protocol]
 
+    # --- Detect system/ISP DNS and show to user ---
+    no_system_dns = getattr(args, "no_system_dns", False)
+    system_servers: list[dict] = []
+    if not no_system_dns and args.protocol in ("udp", "tcp", "all"):
+        system_servers = get_system_dns_servers()
+        if system_servers and not quiet:
+            if _HAS_RICH:
+                console.print("[bold]Detected DNS servers:[/bold]")
+                for srv in system_servers:
+                    ip = srv.get("_raw_ip", srv.get("ip4") or srv.get("ip6", "?"))
+                    label = srv.get("_label", "")
+                    tag_str = f" [dim]({label})[/dim]" if label else ""
+                    console.print(f"  [cyan]System resolver: {ip}{tag_str}[/cyan]")
+                console.print()
+            else:
+                print("Detected DNS servers:")
+                for srv in system_servers:
+                    ip = srv.get("_raw_ip", srv.get("ip4") or srv.get("ip6", "?"))
+                    label = srv.get("_label", "")
+                    tag_str = f" ({label})" if label else ""
+                    print(f"  System resolver: {ip}{tag_str}")
+                print()
+
     # --- Select server pool ---
     pool = _select_servers(args.servers, args.protocol, args.add_server or [])
+
+    # Prepend system DNS (deduplicated by IP)
+    if system_servers:
+        existing_ips = {s.get("ip4") or s.get("ip6") for s in pool}
+        for srv in reversed(system_servers):
+            ip = srv.get("ip4") or srv.get("ip6")
+            if ip and ip not in existing_ips:
+                pool.insert(0, srv)
+                existing_ips.add(ip)
 
     if not pool:
         console.print(
