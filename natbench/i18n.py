@@ -221,20 +221,22 @@ def clear_cache() -> None:
 
 #: All language codes that ship with the package.
 SUPPORTED_LANGS: list[str] = [
-    "bg", "cs", "da", "de", "el", "en", "es", "fi", "fr",
-    "hr", "hu", "it", "nl", "no", "pl", "pt", "ro", "ru",
-    "sv", "tr", "uk",
+    "ar", "bg", "cs", "da", "de", "el", "en", "es", "fi", "fr",
+    "hi", "hr", "hu", "id", "it", "ja", "ko", "nl", "no", "pl",
+    "pt", "ro", "ru", "sv", "tr", "uk", "zh",
 ]
 
 #: Map language code → human-readable native name.
 LANG_NAMES: dict[str, str] = {
-    "bg": "Български",   "cs": "Čeština",     "da": "Dansk",
-    "de": "Deutsch",     "el": "Ελληνικά",    "en": "English",
-    "es": "Español",     "fi": "Suomi",       "fr": "Français",
-    "hr": "Hrvatski",    "hu": "Magyar",      "it": "Italiano",
-    "nl": "Nederlands",  "no": "Norsk",       "pl": "Polski",
-    "pt": "Português",   "ro": "Română",      "ru": "Русский",
-    "sv": "Svenska",     "tr": "Türkçe",      "uk": "Українська",
+    "ar": "العربية",          "bg": "Български",     "cs": "Čeština",
+    "da": "Dansk",            "de": "Deutsch",       "el": "Ελληνικά",
+    "en": "English",          "es": "Español",       "fi": "Suomi",
+    "fr": "Français",         "hi": "हिन्दी",          "hr": "Hrvatski",
+    "hu": "Magyar",           "id": "Bahasa Indonesia", "it": "Italiano",
+    "ja": "日本語",            "ko": "한국어",         "nl": "Nederlands",
+    "no": "Norsk",            "pl": "Polski",        "pt": "Português",
+    "ro": "Română",           "ru": "Русский",       "sv": "Svenska",
+    "tr": "Türkçe",           "uk": "Українська",    "zh": "中文（简体）",
 }
 
 

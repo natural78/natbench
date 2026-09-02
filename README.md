@@ -28,8 +28,8 @@ single command or a point-and-click GUI.
   table, no external dependencies)
 - **Plugin system** — extend with custom resolvers, exporters, scorers, server
   providers, and locales
-- **21 languages** — de, en, pl, ru, fr, nl, cs, hu, it, es, pt, sv, no, da,
-  fi, el, ro, tr, uk, hr, bg
+- **27 languages** — en, de, zh, ja, es, fr, ru, ar, pt, nl, pl, it, ko, tr,
+  cs, hu, sv, da, fi, no, el, ro, uk, hr, bg, hi, id
 - **Zero mandatory dependencies** — all built-in functionality uses the Python
   standard library
 - **GUI** — cross-platform tkinter interface (no extra install needed)
