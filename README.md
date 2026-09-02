@@ -9,12 +9,20 @@ protocols (UDP, TCP, DoT, DoH), ranks them by a configurable composite score,
 and can apply the best server to your system DNS configuration — all with a
 single command or a point-and-click GUI.
 
+<p align="center">
+  <img src="assets/screenshots/cli-demo.png" alt="NatBench CLI demo" width="720"/>
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/gui-main.png" alt="NatBench GUI" width="720"/>
+</p>
+
 ---
 
 ## Features
 
-- **72+ built-in DNS servers** — Cloudflare, Google, Quad9, AdGuard, Mullvad,
-  NextDNS, and many more from 20+ countries
+- **170+ built-in DNS servers** — public resolvers + ISP DNS from 14 countries
+  (DE/AT/CH/NL/FR/GB/US/CA/AU/JP/CN/RU/BR/IN)
 - **Multi-protocol** — UDP · TCP · DNS-over-TLS (DoT) · DNS-over-HTTPS (DoH)
 - **Composite scoring** — weighted latency, reliability, consistency, and
   security features (DNSSEC, malware blocking, ad blocking)
