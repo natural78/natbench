@@ -41,6 +41,7 @@ try:
         set_dns,
     )
     from .updater import check_for_updates
+    from .profiles import list_profiles, load_profile, save_profile, delete_profile, validate_profile
 except ImportError:
     import sys, pathlib
     sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
@@ -56,6 +57,7 @@ except ImportError:
         set_dns,
     )
     from natbench.updater import check_for_updates
+    from natbench.profiles import list_profiles, load_profile, save_profile, delete_profile, validate_profile
 
 # ---------------------------------------------------------------------------
 # Colour palette (dark theme)
@@ -513,13 +515,19 @@ class NatBenchApp:
         self._tab_dns = tab_dns
         self._build_system_dns_tab(tab_dns)
 
-        # --- Tab 3: Export ---
+        # --- Tab 3: Profiles ---
+        tab_profiles = tk.Frame(nb, bg=C["bg"])
+        nb.add(tab_profiles, text="Profiles")
+        self._tab_profiles = tab_profiles
+        self._build_profiles_tab(tab_profiles)
+
+        # --- Tab 4: Export ---
         tab_export = tk.Frame(nb, bg=C["bg"])
         nb.add(tab_export, text=self._t("btn_export"))
         self._tab_export = tab_export
         self._build_export_tab(tab_export)
 
-        # --- Tab 4: About ---
+        # --- Tab 5: About ---
         tab_about = tk.Frame(nb, bg=C["bg"])
         nb.add(tab_about, text=self._t("menu_about"))
         self._tab_about = tab_about
@@ -716,6 +724,173 @@ class NatBenchApp:
                    command=self._refresh_preview).pack(anchor="w", padx=10, pady=(0, 8))
 
     # ------------------------------------------------------------------
+    # Tab: Profiles
+    # ------------------------------------------------------------------
+
+    def _build_profiles_tab(self, parent: tk.Frame) -> None:
+        """Profile manager: list, load, save, delete profiles."""
+        top = tk.Frame(parent, bg=C["bg"])
+        top.pack(fill="both", expand=True, padx=10, pady=8)
+
+        # --- Profile list ---
+        lbl = tk.Label(top, text="Profiles", bg=C["bg"], fg=C["highlight"],
+                       font=("Segoe UI", 12, "bold"))
+        lbl.pack(anchor="w", pady=(0, 4))
+
+        list_frame = tk.Frame(top, bg=C["panel"])
+        list_frame.pack(fill="both", expand=True)
+
+        cols = ("name", "description", "vpn", "source")
+        self._profile_tree = ttk.Treeview(
+            list_frame, columns=cols, show="headings", height=10,
+        )
+        self._profile_tree.heading("name", text="Name")
+        self._profile_tree.heading("description", text="Description")
+        self._profile_tree.heading("vpn", text="VPN")
+        self._profile_tree.heading("source", text="Source")
+        self._profile_tree.column("name", width=130, minwidth=80)
+        self._profile_tree.column("description", width=250, minwidth=100)
+        self._profile_tree.column("vpn", width=50, anchor="center")
+        self._profile_tree.column("source", width=80, anchor="center")
+
+        vsb = ttk.Scrollbar(list_frame, orient="vertical", command=self._profile_tree.yview)
+        self._profile_tree.configure(yscrollcommand=vsb.set)
+        self._profile_tree.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+
+        # --- Buttons ---
+        btn_frame = tk.Frame(top, bg=C["bg"])
+        btn_frame.pack(fill="x", pady=(8, 0))
+
+        ttk.Button(btn_frame, text="Reload", command=self._refresh_profiles, width=10).pack(side="left", padx=(0, 4))
+        ttk.Button(btn_frame, text="Load Profile", command=self._load_selected_profile, width=14).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="Delete", command=self._delete_selected_profile, width=10).pack(side="left", padx=4)
+
+        # --- Save current settings as profile ---
+        save_frame = tk.Frame(top, bg=C["bg"])
+        save_frame.pack(fill="x", pady=(12, 0))
+
+        tk.Label(save_frame, text="Save current settings as profile:",
+                 bg=C["bg"], fg=C["fg_dim"], font=("Segoe UI", 9)).pack(anchor="w")
+
+        name_row = tk.Frame(save_frame, bg=C["bg"])
+        name_row.pack(fill="x", pady=(4, 0))
+
+        tk.Label(name_row, text="Name:", bg=C["bg"], fg=C["fg"], width=8, anchor="w").pack(side="left")
+        self._profile_name_var = tk.StringVar()
+        ttk.Entry(name_row, textvariable=self._profile_name_var, width=20).pack(side="left", padx=(0, 6))
+        ttk.Button(name_row, text="Save Profile", command=self._save_current_as_profile, width=14).pack(side="left")
+
+        # --- Info label ---
+        self._profile_info_lbl = tk.Label(
+            top, text="", bg=C["bg"], fg=C["accent"],
+            font=("Segoe UI", 9), anchor="w", wraplength=450,
+        )
+        self._profile_info_lbl.pack(anchor="w", pady=(6, 0))
+
+        self._refresh_profiles()
+
+    def _refresh_profiles(self) -> None:
+        """Reload and display all profiles in the tree."""
+        if not hasattr(self, "_profile_tree"):
+            return
+        self._profile_tree.delete(*self._profile_tree.get_children())
+        for p in list_profiles():
+            vpn = "✓" if p.get("vpn_enabled") else "—"
+            src = "built-in" if p.get("is_builtin") else "user"
+            self._profile_tree.insert("", "end", iid=p["name"], values=(
+                p["name"], p.get("description", ""), vpn, src,
+            ))
+
+    def _load_selected_profile(self) -> None:
+        """Apply the selected profile's settings to the Benchmark panel."""
+        sel = self._profile_tree.selection()
+        if not sel:
+            messagebox.showinfo("NatBench", "Select a profile first.")
+            return
+        name = sel[0]
+        try:
+            prof = load_profile(name)
+        except (FileNotFoundError, ValueError) as exc:
+            messagebox.showerror("NatBench", f"Cannot load profile: {exc}")
+            return
+
+        # Apply protocol
+        if hasattr(self, "_proto_var") and prof.get("protocol"):
+            self._proto_var.set(prof["protocol"].upper())
+
+        # Apply count
+        if hasattr(self, "_count_var") and prof.get("count"):
+            self._count_var.set(str(prof["count"]))
+
+        # Apply timeout
+        if hasattr(self, "_timeout_var") and prof.get("timeout") is not None:
+            self._timeout_var.set(str(prof["timeout"]))
+
+        # Apply workers
+        if hasattr(self, "_workers_var") and prof.get("workers"):
+            self._workers_var.set(str(prof["workers"]))
+
+        # Switch to Benchmark tab
+        if hasattr(self, "_notebook"):
+            self._notebook.select(0)
+
+        desc = prof.get("description", "")
+        self._profile_info_lbl.config(
+            text=f"Loaded: {name}" + (f" — {desc}" if desc else "")
+        )
+
+    def _delete_selected_profile(self) -> None:
+        sel = self._profile_tree.selection()
+        if not sel:
+            messagebox.showinfo("NatBench", "Select a profile first.")
+            return
+        name = sel[0]
+        # Find if built-in
+        items = {p["name"]: p for p in list_profiles()}
+        if items.get(name, {}).get("is_builtin"):
+            messagebox.showwarning("NatBench", f"Cannot delete built-in profile '{name}'.")
+            return
+        if not messagebox.askyesno("NatBench", f"Delete profile '{name}'?"):
+            return
+        try:
+            delete_profile(name)
+        except Exception as exc:
+            messagebox.showerror("NatBench", f"Delete failed: {exc}")
+            return
+        self._refresh_profiles()
+        self._profile_info_lbl.config(text=f"Deleted: {name}")
+
+    def _save_current_as_profile(self) -> None:
+        name = self._profile_name_var.get().strip()
+        if not name:
+            messagebox.showwarning("NatBench", "Enter a profile name first.")
+            return
+        profile = {
+            "name": name,
+            "description": "",
+            "protocol": getattr(self, "_proto_var", tk.StringVar()).get().lower() or "udp",
+            "count": int(getattr(self, "_count_var", tk.StringVar(value="10")).get() or 10),
+            "timeout": float(getattr(self, "_timeout_var", tk.StringVar(value="3.0")).get() or 3.0),
+            "workers": int(getattr(self, "_workers_var", tk.StringVar(value="16")).get() or 16),
+            "servers": "all",
+            "include_system_dns": True,
+            "scorer": "default",
+            "tags": ["user"],
+        }
+        errors = validate_profile(profile)
+        if errors:
+            messagebox.showerror("NatBench", "\n".join(errors))
+            return
+        try:
+            path = save_profile(profile)
+        except ValueError as exc:
+            messagebox.showerror("NatBench", str(exc))
+            return
+        self._profile_info_lbl.config(text=f"Saved: {path}")
+        self._refresh_profiles()
+
+    # ------------------------------------------------------------------
     # Tab: About
     # ------------------------------------------------------------------
 
@@ -816,8 +991,9 @@ class NatBenchApp:
         if hasattr(self, "_notebook"):
             self._notebook.tab(0, text=self._t("label_results"))
             self._notebook.tab(1, text=self._t("label_system_dns"))
-            self._notebook.tab(2, text=self._t("btn_export"))
-            self._notebook.tab(3, text=self._t("menu_about"))
+            self._notebook.tab(2, text="Profiles")
+            self._notebook.tab(3, text=self._t("btn_export"))
+            self._notebook.tab(4, text=self._t("menu_about"))
         # Treeview headings
         if hasattr(self, "_tree"):
             for col in ("rank", "name", "median", "p95", "min", "max",

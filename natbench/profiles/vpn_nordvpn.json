@@ -1,0 +1,21 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "NordVPN Test",
+  "description": "DNS benchmark via NordVPN — requires NordVPN CLI installed",
+  "protocol": "udp",
+  "count": 15,
+  "timeout": 3.0,
+  "workers": 15,
+  "scorer": "default",
+  "servers": "all",
+  "include_system_dns": false,
+  "vpn": {
+    "enabled": true,
+    "name": "NordVPN",
+    "type": "nordvpn",
+    "verify_changed": true,
+    "wait_seconds": 5,
+    "restore_on_exit": true
+  },
+  "tags": ["vpn", "nordvpn"]
+}

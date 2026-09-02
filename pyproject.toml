@@ -74,6 +74,7 @@ include = ["natbench*"]
 natbench = [
     "locales/*.json",
     "plugins/**/*.py",
+    "profiles/*.json",
     "py.typed",
 ]
 

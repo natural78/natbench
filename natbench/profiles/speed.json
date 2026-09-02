@@ -1,0 +1,16 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "Speed Only",
+  "description": "Pure latency test — UDP, top fast servers, latency_only scorer",
+  "protocol": "udp",
+  "count": 20,
+  "timeout": 1.5,
+  "workers": 30,
+  "scorer": "latency_only",
+  "top": 10,
+  "servers": "all",
+  "include_system_dns": true,
+  "export": {"format": null, "path": null, "auto_open": false},
+  "vpn": {"enabled": false},
+  "tags": ["speed", "quick"]
+}

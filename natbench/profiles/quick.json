@@ -1,0 +1,14 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "Quick Check",
+  "description": "Fast 30-second overview — top resolvers only",
+  "protocol": "udp",
+  "count": 5,
+  "timeout": 1.5,
+  "workers": 30,
+  "scorer": "latency_only",
+  "top": 5,
+  "servers": "all",
+  "include_system_dns": true,
+  "tags": ["quick", "speed"]
+}

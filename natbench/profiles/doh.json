@@ -1,0 +1,13 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "DNS-over-HTTPS",
+  "description": "Test all DoH-capable servers — encrypted, privacy-first",
+  "protocol": "doh",
+  "count": 10,
+  "timeout": 4.0,
+  "workers": 10,
+  "scorer": "default",
+  "servers": "all",
+  "include_system_dns": false,
+  "tags": ["doh", "encrypted", "privacy"]
+}

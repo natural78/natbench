@@ -1,0 +1,14 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "Security & Privacy",
+  "description": "Focus on DNSSEC validation, malware blocking and ad filtering",
+  "protocol": "udp",
+  "count": 15,
+  "timeout": 3.0,
+  "workers": 15,
+  "scorer": "default",
+  "top": null,
+  "servers": "secure",
+  "include_system_dns": true,
+  "tags": ["security", "privacy", "dnssec"]
+}

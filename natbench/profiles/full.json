@@ -1,0 +1,14 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "Full Comprehensive",
+  "description": "All servers, all checks, best for thorough analysis — takes ~5 minutes",
+  "protocol": "udp",
+  "count": 30,
+  "timeout": 3.0,
+  "workers": 25,
+  "scorer": "default",
+  "servers": "all",
+  "include_system_dns": true,
+  "export": {"format": "html", "path": "~/natbench-results/", "auto_open": false},
+  "tags": ["full", "comprehensive"]
+}

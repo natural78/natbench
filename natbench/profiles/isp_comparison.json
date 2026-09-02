@@ -1,0 +1,13 @@
+{
+  "_meta": {"natbench_profile": "1.0"},
+  "name": "ISP vs Alternatives",
+  "description": "Your ISP/router DNS vs the best public resolvers — the classic comparison",
+  "protocol": "udp",
+  "count": 25,
+  "timeout": 2.0,
+  "workers": 20,
+  "scorer": "default",
+  "servers": "all",
+  "include_system_dns": true,
+  "tags": ["isp", "comparison"]
+}

@@ -62,6 +62,7 @@ try:
         set_dns,
     )
     from .updater import check_for_updates, self_update
+    from .profiles import list_profiles, load_profile, save_profile, validate_profile
 except ImportError:
     # Allow running as a standalone script for quick testing
     import importlib, pathlib
@@ -84,6 +85,7 @@ except ImportError:
         set_dns,
     )
     from natbench.updater import check_for_updates, self_update
+    from natbench.profiles import list_profiles, load_profile, save_profile, validate_profile
 
 # ---------------------------------------------------------------------------
 # Version
@@ -563,6 +565,28 @@ def _build_parser(lang: str) -> argparse.ArgumentParser:
         action="store_true",
         help="Do not auto-detect and prepend system/ISP DNS servers to the benchmark.",
     )
+    # --- Profile management ---
+    parser.add_argument(
+        "--profile",
+        metavar="NAME",
+        default=None,
+        help=(
+            "Load a named profile (built-in or user-defined) and use its settings "
+            "as defaults. Explicit flags override profile values. "
+            "See --list-profiles."
+        ),
+    )
+    parser.add_argument(
+        "--list-profiles",
+        action="store_true",
+        help="List all available profiles (built-in and user) and exit.",
+    )
+    parser.add_argument(
+        "--save-profile",
+        metavar="NAME",
+        default=None,
+        help="Save the current benchmark settings as a named profile and exit.",
+    )
     # Positional sub-command alias: "natbench update"
     parser.add_argument(
         "command",
@@ -610,6 +634,122 @@ def main() -> int:
     # Override lang from full parse
     if args.lang and args.lang.lower() in SUPPORTED_LANGS:
         lang = args.lang.lower()
+
+    # --- --list-profiles ---
+    if getattr(args, "list_profiles", False):
+        profiles = list_profiles()
+        if not profiles:
+            console.print(
+                "[yellow]No profiles found.[/yellow]" if _HAS_RICH else "No profiles found."
+            )
+            return 0
+        if _HAS_RICH:
+            tbl = Table(title="NatBench Profiles", box=rich_box.ROUNDED, header_style="bold cyan")
+            tbl.add_column("Name", min_width=18)
+            tbl.add_column("Description", min_width=30)
+            tbl.add_column("VPN", justify="center", width=5)
+            tbl.add_column("Source", width=10)
+            for p in profiles:
+                tbl.add_row(
+                    p["name"],
+                    p.get("description", ""),
+                    "✓" if p.get("vpn_enabled") else "—",
+                    "[dim]built-in[/dim]" if p.get("is_builtin") else "[cyan]user[/cyan]",
+                )
+            console.print(tbl)
+        else:
+            print(f"{'Name':<20} {'VPN':<5} {'Source':<10} Description")
+            print("-" * 70)
+            for p in profiles:
+                src = "built-in" if p.get("is_builtin") else "user"
+                vpn = "yes" if p.get("vpn_enabled") else "no"
+                print(f"{p['name']:<20} {vpn:<5} {src:<10} {p.get('description', '')}")
+        return 0
+
+    # --- --save-profile ---
+    if getattr(args, "save_profile", None):
+        profile = {
+            "name": args.save_profile,
+            "description": "",
+            "protocol": args.protocol,
+            "count": args.count,
+            "timeout": args.timeout,
+            "workers": args.workers,
+            "servers": args.servers,
+            "top": args.top,
+            "include_system_dns": not getattr(args, "no_system_dns", False),
+            "scorer": "default",
+            "tags": [],
+        }
+        errors = validate_profile(profile)
+        if errors:
+            for err in errors:
+                console.print(
+                    f"[red]Profile error: {err}[/red]" if _HAS_RICH else f"Profile error: {err}"
+                )
+            return 1
+        path = save_profile(profile)
+        console.print(
+            f"[green]Profile saved: {path}[/green]" if _HAS_RICH else f"Profile saved: {path}"
+        )
+        return 0
+
+    # --- --profile: load profile and apply as defaults ---
+    if getattr(args, "profile", None):
+        try:
+            prof = load_profile(args.profile)
+        except FileNotFoundError:
+            console.print(
+                f"[red]Profile not found: {args.profile!r}[/red]"
+                if _HAS_RICH else f"Profile not found: {args.profile!r}"
+            )
+            console.print(
+                "  Use [bold]natbench --list-profiles[/bold] to see available profiles."
+                if _HAS_RICH else "  Use natbench --list-profiles to see available profiles."
+            )
+            return 1
+        if not quiet:
+            desc = prof.get("description", "")
+            console.print(
+                f"[cyan]Using profile: [bold]{args.profile}[/bold]"
+                + (f" — {desc}" if desc else "") + "[/cyan]"
+                if _HAS_RICH
+                else f"Using profile: {args.profile}" + (f" — {desc}" if desc else "")
+            )
+        # Apply profile values only where the user hasn't explicitly set a flag
+        # (argparse doesn't expose which were defaulted, so we compare to defaults)
+        _parser_defaults = _build_parser(lang).parse_args([])
+        for arg_name, prof_key in [
+            ("protocol", "protocol"), ("count", "count"), ("timeout", "timeout"),
+            ("workers", "workers"), ("servers", "servers"), ("top", "top"),
+        ]:
+            if getattr(args, arg_name) == getattr(_parser_defaults, arg_name):
+                if prof.get(prof_key) is not None:
+                    setattr(args, arg_name, prof[prof_key])
+
+        # Handle VPN if the profile enables it
+        vpn_cfg = prof.get("vpn", {})
+        if vpn_cfg.get("enabled"):
+            try:
+                from .vpn import VpnContextManager
+                _vpn_ctx = VpnContextManager(vpn_cfg)
+            except ImportError:
+                try:
+                    from natbench.vpn import VpnContextManager
+                    _vpn_ctx = VpnContextManager(vpn_cfg)
+                except ImportError:
+                    _vpn_ctx = None
+            if _vpn_ctx and not quiet:
+                console.print(
+                    f"[yellow]VPN: {vpn_cfg.get('name', vpn_cfg.get('type', 'unknown'))} "
+                    f"will be activated before benchmark.[/yellow]"
+                    if _HAS_RICH
+                    else f"VPN: {vpn_cfg.get('name', 'unknown')} will be activated."
+                )
+        else:
+            _vpn_ctx = None
+    else:
+        _vpn_ctx = None
 
     # --- natbench update  /  --self-update ---
     if getattr(args, "self_update", False) or getattr(args, "command", None) == "update":
@@ -752,25 +892,29 @@ def main() -> int:
             else f"Benchmarking {len(pool)} server(s) via {args.protocol.upper()}…"
         )
 
-    # --- Run benchmark with progress ---
+    # --- Run benchmark (optionally inside a VPN session) ---
+    from contextlib import nullcontext
+    _ctx = _vpn_ctx if _vpn_ctx else nullcontext()
+
     all_results: list[ServerStats] = []
     start_time = time.perf_counter()
 
-    for protocol in protocols:
-        proto_pool = _filter_pool_for_protocol(pool, protocol)
-        if not proto_pool:
-            continue
-        if _HAS_RICH and not quiet:
-            results = _run_with_rich_progress(
-                proto_pool, args.count, args.timeout,
-                protocol, lang, args.workers,
-            )
-        else:
-            results = _run_plain_progress(
-                proto_pool, args.count, args.timeout,
-                protocol, lang, args.workers, quiet,
-            )
-        all_results.extend(results)
+    with _ctx:
+        for protocol in protocols:
+            proto_pool = _filter_pool_for_protocol(pool, protocol)
+            if not proto_pool:
+                continue
+            if _HAS_RICH and not quiet:
+                results = _run_with_rich_progress(
+                    proto_pool, args.count, args.timeout,
+                    protocol, lang, args.workers,
+                )
+            else:
+                results = _run_plain_progress(
+                    proto_pool, args.count, args.timeout,
+                    protocol, lang, args.workers, quiet,
+                )
+            all_results.extend(results)
 
     if not all_results:
         console.print(
