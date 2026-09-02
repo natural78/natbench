@@ -1,0 +1,164 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bgBanner" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="60%" stop-color="#0d2040"/>
+      <stop offset="100%" stop-color="#071020"/>
+    </linearGradient>
+    <linearGradient id="arcB" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0066cc"/>
+      <stop offset="100%" stop-color="#00d4ff"/>
+    </linearGradient>
+    <linearGradient id="barG" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#0066cc"/>
+      <stop offset="100%" stop-color="#00d4ff"/>
+    </linearGradient>
+    <linearGradient id="barY" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#cc7700"/>
+      <stop offset="100%" stop-color="#ffaa00"/>
+    </linearGradient>
+    <linearGradient id="barR" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#cc2200"/>
+      <stop offset="100%" stop-color="#ff4422"/>
+    </linearGradient>
+    <linearGradient id="textG2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#c8e0ff"/>
+    </linearGradient>
+    <filter id="gB"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="gBsoft"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="clip"><rect width="1200" height="400" rx="0"/></clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="400" fill="url(#bgBanner)"/>
+
+  <!-- Subtle dot grid -->
+  <g opacity="0.05" fill="#00d4ff">
+    <circle cx="100" cy="80" r="2"/><circle cx="200" cy="80" r="2"/><circle cx="300" cy="80" r="2"/>
+    <circle cx="100" cy="160" r="2"/><circle cx="200" cy="160" r="2"/><circle cx="300" cy="160" r="2"/>
+    <circle cx="100" cy="240" r="2"/><circle cx="200" cy="240" r="2"/><circle cx="300" cy="240" r="2"/>
+    <circle cx="100" cy="320" r="2"/><circle cx="200" cy="320" r="2"/><circle cx="300" cy="320" r="2"/>
+    <circle cx="50" cy="120" r="2"/><circle cx="50" cy="200" r="2"/><circle cx="50" cy="280" r="2"/>
+    <circle cx="350" cy="120" r="2"/><circle cx="350" cy="200" r="2"/><circle cx="350" cy="280" r="2"/>
+  </g>
+
+  <!-- Left panel: Logo icon (centered in ~380px wide area, centered vertically at 200) -->
+  <!-- gauge center: (190, 230), radius: 110 -->
+  <!-- 225°: x=190-77.8=112.2, y=230+77.8=307.8 -->
+  <!-- 315°: x=267.8,           y=307.8 -->
+  <path d="M 112 308 A 110 110 0 1 0 268 308"
+        fill="none" stroke="#1e3a5f" stroke-width="20" stroke-linecap="round"/>
+  <!-- active to ~30°: x=190+110*0.866=190+95.3=285.3, y=230-110*0.5=230-55=175 -->
+  <path d="M 112 308 A 110 110 0 1 0 285 175"
+        fill="none" stroke="url(#arcB)" stroke-width="20" stroke-linecap="round" filter="url(#gBsoft)"/>
+  <!-- Speed dot -->
+  <circle cx="285" cy="175" r="14" fill="#00ff88" filter="url(#gB)"/>
+  <circle cx="285" cy="175" r="8" fill="#00ff88"/>
+
+  <!-- Network nodes -->
+  <circle cx="190" cy="100" r="10" fill="#00d4ff" opacity="0.85" filter="url(#gBsoft)"/>
+  <circle cx="190" cy="100" r="5" fill="#ffffff"/>
+  <circle cx="120" cy="140" r="7" fill="#00d4ff" opacity="0.6"/>
+  <circle cx="120" cy="140" r="3.5" fill="#fff" opacity="0.8"/>
+  <circle cx="260" cy="140" r="7" fill="#00d4ff" opacity="0.6"/>
+  <circle cx="260" cy="140" r="3.5" fill="#fff" opacity="0.8"/>
+  <circle cx="80" cy="195" r="5" fill="#00d4ff" opacity="0.35"/>
+  <circle cx="300" cy="195" r="5" fill="#00d4ff" opacity="0.35"/>
+
+  <g stroke="#00d4ff" stroke-width="1.5" opacity="0.3">
+    <line x1="190" y1="205" x2="190" y2="110"/>
+    <line x1="190" y1="205" x2="125" y2="145"/>
+    <line x1="190" y1="205" x2="255" y2="145"/>
+    <line x1="190" y1="205" x2="84" y2="198"/>
+    <line x1="190" y1="205" x2="296" y2="198"/>
+  </g>
+
+  <!-- Center hub -->
+  <circle cx="190" cy="205" r="20" fill="#0a1628" stroke="#00d4ff" stroke-width="2.5"/>
+  <circle cx="190" cy="205" r="8" fill="#00d4ff" opacity="0.9"/>
+
+  <!-- Vertical separator -->
+  <line x1="410" y1="40" x2="410" y2="360" stroke="#1e3a5f" stroke-width="1" opacity="0.6"/>
+
+  <!-- Right panel: Wordmark + tagline + features -->
+  <text x="450" y="145" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif"
+        font-size="86" font-weight="800" letter-spacing="-3" fill="url(#textG2)">Nat</text>
+  <text x="626" y="145" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif"
+        font-size="86" font-weight="300" letter-spacing="-2" fill="#00d4ff">Bench</text>
+
+  <text x="452" y="185" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif"
+        font-size="22" fill="#8ba3c7" letter-spacing="3" font-weight="400">DNS BENCHMARK &amp; OPTIMIZER</text>
+
+  <!-- Feature pills -->
+  <g font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif" font-size="14" fill="#8ba3c7">
+    <rect x="452" y="210" width="80" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="492" y="228" text-anchor="middle" fill="#00d4ff">UDP · TCP</text>
+
+    <rect x="544" y="210" width="56" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="572" y="228" text-anchor="middle" fill="#00d4ff">DoH</text>
+
+    <rect x="612" y="210" width="52" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="638" y="228" text-anchor="middle" fill="#00d4ff">DoT</text>
+
+    <rect x="676" y="210" width="90" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="721" y="228" text-anchor="middle" fill="#00d4ff">DNSSEC</text>
+
+    <rect x="778" y="210" width="86" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="821" y="228" text-anchor="middle" fill="#00d4ff">104 servers</text>
+
+    <rect x="452" y="248" width="100" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="502" y="266" text-anchor="middle" fill="#00d4ff">21 languages</text>
+
+    <rect x="564" y="248" width="96" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="612" y="266" text-anchor="middle" fill="#00d4ff">Plugin system</text>
+
+    <rect x="672" y="248" width="76" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="710" y="266" text-anchor="middle" fill="#00d4ff">VPN-aware</text>
+
+    <rect x="760" y="248" width="100" height="26" rx="13" fill="#1e3a5f" opacity="0.8"/>
+    <text x="810" y="266" text-anchor="middle" fill="#00d4ff">CLI + GUI + Web</text>
+  </g>
+
+  <!-- Mini benchmark bars on far right -->
+  <g>
+    <!-- Bar chart: 5 servers comparison -->
+    <text x="920" y="90" font-family="'Segoe UI',system-ui,Arial" font-size="13" fill="#8ba3c7" font-weight="600" letter-spacing="1">BENCHMARK PREVIEW</text>
+
+    <!-- Server bars (left labels, right bars, center at x=920-1160) -->
+    <!-- Bar 1: NatBench/wonx.eu - score 94, height proportional -->
+    <text x="930" y="128" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#8ba3c7" text-anchor="start">dns.wonx.eu</text>
+    <rect x="1020" y="112" width="120" height="18" rx="3" fill="url(#barG)" opacity="0.9"/>
+    <text x="1148" y="126" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#00d4ff">94</text>
+
+    <!-- Bar 2: Cloudflare - 91 -->
+    <text x="930" y="160" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#8ba3c7">Cloudflare</text>
+    <rect x="1020" y="144" width="110" height="18" rx="3" fill="url(#barG)" opacity="0.75"/>
+    <text x="1138" y="158" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#00d4ff">91</text>
+
+    <!-- Bar 3: Quad9 - 87 -->
+    <text x="930" y="192" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#8ba3c7">Quad9</text>
+    <rect x="1020" y="176" width="100" height="18" rx="3" fill="url(#barG)" opacity="0.65"/>
+    <text x="1128" y="190" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#00d4ff">87</text>
+
+    <!-- Bar 4: Google - 82 -->
+    <text x="930" y="224" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#8ba3c7">Google</text>
+    <rect x="1020" y="208" width="90" height="18" rx="3" fill="url(#barY)" opacity="0.8"/>
+    <text x="1118" y="222" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#ffaa00">82</text>
+
+    <!-- Bar 5: ISP DNS - 54 -->
+    <text x="930" y="256" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#8ba3c7">ISP DNS</text>
+    <rect x="1020" y="240" width="55" height="18" rx="3" fill="url(#barR)" opacity="0.8"/>
+    <text x="1083" y="254" font-family="'Segoe UI',system-ui,Arial" font-size="11" fill="#ff4422">54</text>
+
+    <!-- Score label -->
+    <text x="1020" y="290" font-family="'Segoe UI',system-ui,Arial" font-size="10" fill="#4a6080">Score 0–100 · Speed 50% · Reliability 30% · Security 20%</text>
+  </g>
+
+  <!-- Bottom: GitHub + pip badges area -->
+  <line x1="450" y1="310" x2="1160" y2="310" stroke="#1e3a5f" stroke-width="1" opacity="0.5"/>
+  <text x="452" y="340" font-family="'Segoe UI',system-ui,Arial" font-size="14" fill="#4a6080">github.com/natural78/natbench</text>
+  <text x="452" y="362" font-family="'Segoe UI',system-ui,Arial" font-size="14" fill="#4a6080">codeberg.org/Natural78/natbench</text>
+  <text x="900" y="340" font-family="'Courier New',monospace" font-size="15" fill="#00d4ff">pip install natbench</text>
+  <text x="900" y="362" font-family="'Courier New',monospace" font-size="15" fill="#8ba3c7">python 3.10+ · MIT license · no deps</text>
+</svg>

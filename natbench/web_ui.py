@@ -69,6 +69,51 @@ def _broadcast_progress(msg: dict) -> None:
 # HTML / CSS / JS (single-page app, inline, no external deps)
 # ---------------------------------------------------------------------------
 
+_FAVICON_DATA_URI = (
+    "data:image/svg+xml,"
+    "%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E"
+    "%3Cdefs%3E%3ClinearGradient%20id%3D%22fgArc%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E"
+    "%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%230066cc%22%2F%3E"
+    "%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2300d4ff%22%2F%3E"
+    "%3C%2FlinearGradient%3E%3C%2Fdefs%3E"
+    "%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230a1628%22%2F%3E"
+    "%3Cpath%20d%3D%22M%208%2028%20A%2011%2011%200%201%200%2024%2028%22%20fill%3D%22none%22%20stroke%3D%22%231e3a5f%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E"
+    "%3Cpath%20d%3D%22M%208%2028%20A%2011%2011%200%201%200%2026%2015%22%20fill%3D%22none%22%20stroke%3D%22url%28%2523fgArc%29%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E"
+    "%3Ccircle%20cx%3D%2226%22%20cy%3D%2215%22%20r%3D%222.5%22%20fill%3D%22%2300ff88%22%2F%3E"
+    "%3Ccircle%20cx%3D%2216%22%20cy%3D%2218%22%20r%3D%222.5%22%20fill%3D%22%2300d4ff%22%20opacity%3D%220.9%22%2F%3E"
+    "%3C%2Fsvg%3E"
+)
+
+_LOGO_INLINE_SVG = """\
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" style="height:44px;width:auto;display:block;">
+  <defs>
+    <linearGradient id="wui_arc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0066cc"/><stop offset="100%" stop-color="#00d4ff"/>
+    </linearGradient>
+    <linearGradient id="wui_txt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#c8e0ff"/>
+    </linearGradient>
+    <filter id="wui_g"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <path d="M 54 161 A 65 65 0 1 0 146 161" fill="none" stroke="#1e3a5f" stroke-width="12" stroke-linecap="round"/>
+  <path d="M 54 161 A 65 65 0 1 0 156 83" fill="none" stroke="url(#wui_arc)" stroke-width="12" stroke-linecap="round" filter="url(#wui_g)"/>
+  <circle cx="156" cy="83" r="9" fill="#00ff88" filter="url(#wui_g)"/>
+  <circle cx="100" cy="48" r="5" fill="#00d4ff" opacity="0.8"/>
+  <circle cx="65" cy="68" r="4" fill="#00d4ff" opacity="0.55"/>
+  <circle cx="135" cy="68" r="4" fill="#00d4ff" opacity="0.55"/>
+  <g stroke="#00d4ff" stroke-width="1" opacity="0.3">
+    <line x1="100" y1="105" x2="100" y2="53"/>
+    <line x1="100" y1="105" x2="68" y2="71"/>
+    <line x1="100" y1="105" x2="132" y2="71"/>
+  </g>
+  <circle cx="100" cy="105" r="10" fill="#161b22" stroke="#00d4ff" stroke-width="1.5"/>
+  <circle cx="100" cy="105" r="4" fill="#00d4ff"/>
+  <text x="220" y="108" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="-2" fill="url(#wui_txt)">Nat</text>
+  <text x="353" y="108" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif" font-size="72" font-weight="300" letter-spacing="-1" fill="#00d4ff">Bench</text>
+  <text x="220" y="142" font-family="'Segoe UI',system-ui,-apple-system,Arial,sans-serif" font-size="20" font-weight="400" fill="#8ba3c7" letter-spacing="2">DNS BENCHMARK &amp; OPTIMIZER</text>
+  <line x1="220" y1="120" x2="700" y2="120" stroke="#30363d" stroke-width="1" opacity="0.6"/>
+</svg>"""
+
 _HTML_PAGE = """\
 <!DOCTYPE html>
 <html lang="en">
@@ -76,6 +121,7 @@ _HTML_PAGE = """\
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NatBench — DNS Benchmark</title>
+<link rel="icon" type="image/svg+xml" href="{favicon}">
 <style>
   :root {
     --bg: #0d1117;
@@ -278,7 +324,7 @@ _HTML_PAGE = """\
 </head>
 <body>
 <header>
-  <h1>&#9881; NatBench</h1>
+  {logo}
   <span class="version">DNS Benchmark &amp; Analyser</span>
 </header>
 
@@ -672,7 +718,12 @@ class NatBenchHandler(BaseHTTPRequestHandler):
             }
             for s in SERVER_DB
         ]
-        page = _HTML_PAGE.replace("__SERVERS_JSON__", json.dumps(server_data))
+        page = (
+            _HTML_PAGE
+            .replace("__SERVERS_JSON__", json.dumps(server_data))
+            .replace("{favicon}", _FAVICON_DATA_URI)
+            .replace("{logo}", _LOGO_INLINE_SVG)
+        )
         payload = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")

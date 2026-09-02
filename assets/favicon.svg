@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="fgArc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0066cc"/><stop offset="100%" stop-color="#00d4ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0a1628"/>
+  <!-- gauge track: center(16,20) r=11 -->
+  <!-- 225°: x=16-7.78=8.22, y=20+7.78=27.78 -->
+  <!-- 315°: x=23.78, y=27.78 -->
+  <path d="M 8 28 A 11 11 0 1 0 24 28" fill="none" stroke="#1e3a5f" stroke-width="3" stroke-linecap="round"/>
+  <!-- active arc to ~30°: x=16+11*0.866=25.5, y=20-11*0.5=14.5 -->
+  <path d="M 8 28 A 11 11 0 1 0 26 15" fill="none" stroke="url(#fgArc)" stroke-width="3" stroke-linecap="round"/>
+  <!-- speed dot -->
+  <circle cx="26" cy="15" r="2.5" fill="#00ff88"/>
+  <!-- center hub -->
+  <circle cx="16" cy="18" r="2.5" fill="#00d4ff" opacity="0.9"/>
+</svg>

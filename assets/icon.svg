@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1f3c"/>
+      <stop offset="100%" stop-color="#0a1628"/>
+    </linearGradient>
+    <linearGradient id="arcActive" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0066cc"/>
+      <stop offset="100%" stop-color="#00d4ff"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowSoft" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background rounded rect -->
+  <rect width="400" height="400" rx="80" fill="url(#bg)"/>
+
+  <!-- Subtle grid dots background -->
+  <g opacity="0.07" fill="#00d4ff">
+    <circle cx="80" cy="80" r="3"/><circle cx="160" cy="80" r="3"/><circle cx="240" cy="80" r="3"/><circle cx="320" cy="80" r="3"/>
+    <circle cx="80" cy="160" r="3"/><circle cx="320" cy="160" r="3"/>
+    <circle cx="80" cy="240" r="3"/><circle cx="320" cy="240" r="3"/>
+    <circle cx="80" cy="320" r="3"/><circle cx="160" cy="320" r="3"/><circle cx="240" cy="320" r="3"/><circle cx="320" cy="320" r="3"/>
+  </g>
+
+  <!-- Gauge track (full arc, dim) — center (200,250) radius 145 -->
+  <!-- Standard math: lower-left at 225°, lower-right at 315°, arc through top (270°) going counterclockwise -->
+  <!-- 225°: x=200+145*cos(225°)=200-102.5=97.5, y=250-145*sin(225°)=250+102.5=352.5 -->
+  <!-- 315°: x=200+145*cos(315°)=302.5,          y=250-145*sin(315°)=250+102.5=352.5 -->
+  <!-- sweep=0 (counterclockwise), large-arc=1 -->
+  <path d="M 97 353 A 145 145 0 1 0 303 353"
+        fill="none" stroke="#1e3a5f" stroke-width="28" stroke-linecap="round"/>
+
+  <!-- Active gauge arc (~80%) ending at approx 30° standard angle -->
+  <!-- 30°: x=200+145*cos(30°)=200+125.6=325.6, y=250-145*sin(30°)=250-72.5=177.5 -->
+  <path d="M 97 353 A 145 145 0 1 0 326 178"
+        fill="none" stroke="url(#arcActive)" stroke-width="28" stroke-linecap="round"
+        filter="url(#glowSoft)"/>
+
+  <!-- Speed needle dot (green glow at tip) -->
+  <circle cx="326" cy="178" r="20" fill="#00ff88" filter="url(#glow)"/>
+  <circle cx="326" cy="178" r="11" fill="#00ff88"/>
+
+  <!-- Network nodes above center (DNS servers) -->
+  <!-- Top server node -->
+  <circle cx="200" cy="85" r="12" fill="#00d4ff" opacity="0.9" filter="url(#glowSoft)"/>
+  <circle cx="200" cy="85" r="6" fill="#ffffff"/>
+  <!-- Left server node -->
+  <circle cx="110" cy="138" r="9" fill="#00d4ff" opacity="0.65"/>
+  <circle cx="110" cy="138" r="4.5" fill="#ffffff" opacity="0.8"/>
+  <!-- Right server node -->
+  <circle cx="290" cy="138" r="9" fill="#00d4ff" opacity="0.65"/>
+  <circle cx="290" cy="138" r="4.5" fill="#ffffff" opacity="0.8"/>
+  <!-- Far-left node -->
+  <circle cx="72" cy="210" r="7" fill="#00d4ff" opacity="0.4"/>
+  <!-- Far-right node -->
+  <circle cx="328" cy="210" r="7" fill="#00d4ff" opacity="0.4"/>
+
+  <!-- Connection lines from center hub to nodes -->
+  <g stroke="#00d4ff" stroke-width="2" opacity="0.35">
+    <line x1="200" y1="235" x2="200" y2="97"/>
+    <line x1="200" y1="235" x2="117" y2="144"/>
+    <line x1="200" y1="235" x2="283" y2="144"/>
+    <line x1="200" y1="235" x2="78" y2="214"/>
+    <line x1="200" y1="235" x2="322" y2="214"/>
+  </g>
+
+  <!-- Center hub -->
+  <circle cx="200" cy="235" r="26" fill="#0a1628" stroke="#00d4ff" stroke-width="3"/>
+  <circle cx="200" cy="235" r="10" fill="#00d4ff" opacity="0.9"/>
+
+  <!-- Tick marks on gauge -->
+  <g stroke="#1e3a5f" stroke-width="6" stroke-linecap="round" opacity="0.8">
+    <!-- Major ticks at 0%, 25%, 50%, 75%, 100% of the 270° arc -->
+    <!-- 0% = 225° standard: already the start point -->
+    <!-- 25% = 225° - 67.5° = 157.5°: x=200+145*cos(157.5°)=200-133.8=66.2, y=250-145*sin(157.5°)=250-55.4=194.6 -->
+    <!-- Inner: 200+125*cos(157.5°)=200-115.3=84.7, 250-125*sin(157.5°)=250-47.8=202.2 -->
+    <line x1="66" y1="195" x2="85" y2="202"/>
+    <!-- 50% = 225° - 135° = 90°: top, x=200, y=250-145=105 -->
+    <!-- Inner: x=200, y=250-125=125 -->
+    <line x1="200" y1="105" x2="200" y2="125"/>
+    <!-- 75% = 225° - 202.5° = 22.5°: x=200+145*cos(22.5°)=200+133.9=333.9, y=250-145*sin(22.5°)=250-55.4=194.6 -->
+    <!-- Inner: 200+125*cos(22.5°)=315.4, 250-47.8=202.2 -->
+    <line x1="334" y1="195" x2="315" y2="202"/>
+  </g>
+</svg>

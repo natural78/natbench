@@ -1,4 +1,6 @@
-# NatBench
+<p align="center">
+  <img src="assets/banner.svg" alt="NatBench — DNS Benchmark &amp; Optimizer" width="100%"/>
+</p>
 
 **Cross-platform DNS benchmark, analyser and optimizer.**
 
