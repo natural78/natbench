@@ -25,7 +25,7 @@ for root, dirs, files in os.walk(plugins_root):
             datas.append((src, rel_dir))
 
 a = Analysis(
-    ["natbench/__main__.py"],
+    ["natbench/_gui_entry.py"],
     pathex=["."],
     binaries=[],
     datas=datas,

@@ -365,14 +365,14 @@ def _print_rich_table(
     display = results[:top] if top else results
 
     table = Table(
-        title=t("label_results", lang),
+        title=t("results_title", lang),
         box=rich_box.ROUNDED,
         show_header=True,
         header_style="bold cyan",
         highlight=True,
     )
     table.add_column(t("col_rank", lang), style="bold", justify="right", width=5)
-    table.add_column(t("col_name", lang), min_width=22)
+    table.add_column(t("col_server", lang), min_width=22)
     table.add_column(t("col_median", lang) + " (ms)", justify="right", width=12)
     table.add_column(t("col_p95", lang) + " (ms)", justify="right", width=10)
     table.add_column(t("col_reliability", lang), justify="right", width=13)
@@ -422,7 +422,7 @@ def _print_plain_table(
     display = results[:top] if top else results
     col_w = [5, 28, 10, 8, 13, 7, 8, 9, 6]
     headers = [
-        t("col_rank", lang), t("col_name", lang),
+        t("col_rank", lang), t("col_server", lang),
         t("col_median", lang), t("col_p95", lang),
         t("col_reliability", lang), t("col_score", lang),
         t("col_dnssec", lang), t("col_malware", lang), t("col_ads", lang),
@@ -824,15 +824,15 @@ def main() -> int:
         cfg = get_current_dns()
         if _HAS_RICH:
             from rich.table import Table as RTable
-            tbl = RTable(title=t("label_system_dns", lang), box=rich_box.SIMPLE)
-            tbl.add_column(t("label_server", lang))
+            tbl = RTable(title=t("gui_tab_dns", lang), box=rich_box.SIMPLE)
+            tbl.add_column(t("col_server", lang))
             tbl.add_column("Method")
             tbl.add_column("Interface")
             for ip in cfg.servers:
                 tbl.add_row(ip, cfg.method, cfg.interface or "(system)")
             console.print(tbl)
         else:
-            print(f"{t('label_current_dns', lang)}: {', '.join(cfg.servers) or '(none)'}")
+            print(f"{t('gui_lbl_current_dns', lang)}: {', '.join(cfg.servers) or '(none)'}")
             print(f"Method: {cfg.method}")
             if cfg.interface:
                 print(f"Interface: {cfg.interface}")

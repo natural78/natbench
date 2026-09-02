@@ -40,16 +40,16 @@ SERVER_DB: list[dict] = [
     # -----------------------------------------------------------------------
     {
         "name": "dns.wonx.eu",
-        "ip4": None,
-        "ip6": None,
-        "doh_url": None,
+        "ip4": "145.239.0.143",
+        "ip6": "2001:41d0:700:48f::2",
+        "doh_url": "https://dns.wonx.eu/dns-query",
         "dot_host": "dns.wonx.eu",
         "dot_port": 853,
         "port": 53,
         "country": "DE",
         "operator": "natural (wonx.eu)",
         "tags": ["custom", "dnssec", "no-log"],
-        "description_en": "Custom self-hosted DoT resolver on dns.wonx.eu.",
+        "description_en": "Self-hosted resolver — UDP/TCP/DoH/DoT, DNSSEC, no logging.",
     },
 
     # -----------------------------------------------------------------------
