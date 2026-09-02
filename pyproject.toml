@@ -9,7 +9,7 @@ description = "Cross-platform DNS benchmark, analyser and optimizer"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
-    { name = "Natural", email = "lag.natural@gmail.com" },
+    { name = "Natural", email = "4495988+natural78@users.noreply.github.com" },
 ]
 keywords = ["dns", "benchmark", "performance", "network", "doh", "dot", "dnssec"]
 classifiers = [

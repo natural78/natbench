@@ -7,9 +7,94 @@ on:
       - "v*"
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            cli_name: natbench-linux-x86_64
+            gui_name: natbench-gui-linux-x86_64
+          - os: windows-latest
+            cli_name: natbench-windows-x86_64.exe
+            gui_name: natbench-gui-windows-x86_64.exe
+          - os: macos-13
+            cli_name: natbench-macos-x86_64
+            gui_name: natbench-gui-macos-x86_64
+
+    runs-on: ${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Hello from NatBench CI"
-      - run: python --version
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pyinstaller && pip install -e .
+
+      - name: Build CLI
+        run: python build.py cli
+
+      - name: Build GUI
+        run: python build.py gui
+
+      - name: Rename artifacts (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mv dist/natbench dist/${{ matrix.cli_name }}
+          mv dist/natbench-gui dist/${{ matrix.gui_name }}
+
+      - name: Rename artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Move-Item dist/natbench.exe dist/${{ matrix.cli_name }}
+          Move-Item dist/natbench-gui.exe dist/${{ matrix.gui_name }}
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.cli_name }}
+          path: dist/${{ matrix.cli_name }}
+
+      - name: Upload GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.gui_name }}
+          path: dist/${{ matrix.gui_name }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+
+      - name: Flatten and generate checksums
+        run: |
+          mkdir -p flat
+          find release/ -type f | while read f; do cp "$f" flat/; done
+          cd flat
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          ls -lh
+
+      - name: Create release and upload binaries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "NatBench ${{ github.ref_name }}" \
+            --generate-notes \
+            flat/* \
+            || gh release upload ${{ github.ref_name }} flat/* --clobber

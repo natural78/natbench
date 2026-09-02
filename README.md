@@ -207,4 +207,4 @@ Code style: standard Python, no formatter enforced. Keep dependencies minimal
 
 MIT License — see `LICENSE` for details.
 
-Copyright (c) 2024 Natural (lag.natural@gmail.com)
+Copyright (c) 2024 Natural
