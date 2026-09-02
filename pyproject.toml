@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "dnsmark"
+dynamic = ["version"]
+description = "Cross-platform DNS benchmark, analyser and optimizer"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Natural", email = "lag.natural@gmail.com" },
+]
+keywords = ["dns", "benchmark", "performance", "network", "doh", "dot", "dnssec"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: X11 Applications :: GTK",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: Name Service (DNS)",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities",
+]
+requires-python = ">=3.10"
+# All core functionality uses stdlib only — no mandatory third-party deps.
+dependencies = []
+
+[project.optional-dependencies]
+gui = [
+    # tkinter is part of the Python standard library on most platforms.
+    # If it's missing (e.g. python3-minimal on Debian), install:
+    #   apt install python3-tk   (Debian/Ubuntu)
+    #   dnf install python3-tkinter  (Fedora/RHEL)
+    # No pip package needed.
+]
+rich = [
+    # The CLI uses Rich for pretty output if available.
+    "rich>=13.0",
+]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "pytest-timeout",
+    "rich>=13.0",
+]
+
+[project.urls]
+Homepage      = "https://natural.yt/dnsmark"
+Repository    = "https://github.com/natural78/dnsmark"
+Documentation = "https://natural.yt/dnsmark/docs"
+"Bug Tracker" = "https://github.com/natural78/dnsmark/issues"
+
+[project.scripts]
+dnsmark     = "dnsmark.cli:main"
+dnsmark-gui = "dnsmark.gui:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "dnsmark.__version__.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dnsmark*"]
+
+[tool.setuptools.package-data]
+dnsmark = [
+    "locales/*.json",
+    "plugins/**/*.py",
+    "py.typed",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --tb=short"
+timeout   = 30
+
+[tool.coverage.run]
+source = ["dnsmark"]
+omit   = ["tests/*", "examples/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

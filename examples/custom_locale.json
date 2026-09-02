@@ -1,0 +1,68 @@
+{
+  "_meta": {
+    "lang": "kl",
+    "lang_name": "Klingon (tlhIngan Hol)",
+    "author": "DNSMark contributors",
+    "version": "1.0",
+    "note": "Example/template locale file. Replace translations with real ones for your language."
+  },
+
+  "app_name": "DNSMark",
+  "app_tagline": "DNS Benchmark & Analyser [kl]",
+  "cli_desc": "Find the fastest and most reliable DNS servers for your network [kl]",
+  "bench_start": "Starting benchmark... [kl]",
+  "bench_done": "Benchmark complete [kl]",
+  "bench_progress": "Testing {server} ({done}/{total}) [kl]",
+  "results_title": "Results [kl]",
+
+  "col_rank": "Rank",
+  "col_server": "Server",
+  "col_score": "Score",
+  "col_avg": "Avg ms",
+  "col_median": "Median",
+  "col_p95": "P95",
+  "col_min": "Min",
+  "col_max": "Max",
+  "col_jitter": "Jitter",
+  "col_reliability": "Reliability",
+  "col_dnssec": "DNSSEC",
+  "col_malware": "Malware",
+  "col_ads": "Ads",
+  "col_protocol": "Protocol",
+
+  "yes": "HIja'",
+  "no": "ghobe'",
+  "unknown": "?",
+
+  "set_dns_confirm": "Set DNS to {server}? [y/N]: [kl] ",
+  "set_dns_success": "DNS changed to {server} [kl]",
+  "set_dns_fail": "Failed to set DNS: {error} [kl]",
+  "set_dns_root": "Root/admin privileges required to change DNS [kl]",
+
+  "export_done": "Exported to {path} [kl]",
+  "export_fail": "Export failed: {error} [kl]",
+  "err_no_servers": "No servers to test [kl]",
+  "err_protocol": "Unknown protocol: {protocol} [kl]",
+
+  "gui_title": "DNSMark - DNS Benchmark [kl]",
+  "gui_tab_bench": "Benchmark",
+  "gui_tab_dns": "System DNS",
+  "gui_tab_export": "Export",
+  "gui_tab_about": "About",
+  "gui_btn_start": "Start Benchmark [kl]",
+  "gui_btn_stop": "Stop [kl]",
+  "gui_btn_set_dns": "Apply DNS [kl]",
+  "gui_btn_export": "Export Results [kl]",
+  "gui_lbl_protocol": "Protocol",
+  "gui_lbl_count": "Queries per server",
+  "gui_lbl_timeout": "Timeout (s)",
+  "gui_lbl_workers": "Workers",
+  "gui_lbl_current_dns": "Current DNS",
+  "gui_lbl_select_dns": "Select new DNS",
+  "gui_status_ready": "Ready [kl]",
+  "gui_status_running": "Running... [kl]",
+
+  "plugin_loaded": "Plugin loaded: {name} v{version} [kl]",
+  "plugin_error": "Plugin error ({path}): {reason} [kl]",
+  "plugin_api_mismatch": "Plugin {name} requires API {required}, got {actual} [kl]"
+}
