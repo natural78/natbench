@@ -66,7 +66,7 @@ pip install -e ".[rich,dev]"
 ### CLI
 
 ```bash
-# Benchmark all built-in servers using UDP (default)
+# Benchmark all built-in servers (UDP, default)
 natbench
 
 # Use DNS-over-HTTPS
@@ -78,19 +78,30 @@ natbench --count 20 --workers 10
 # Show top 10 results only
 natbench --top 10
 
-# Export results to all formats
-natbench --export json,csv,html --output results
+# Filter by server names (space or comma-separated)
+natbench --servers cloudflare google quad9 dns.wonx.eu
 
-# Apply best DNS server to the system
-natbench --apply
+# Export JSON to stdout
+natbench --output json
+
+# Write HTML report to file
+natbench --file report.html --output json
+
+# Show current system DNS
+natbench --show-dns
+
+# Apply best DNS server to the system (requires root)
+sudo natbench --set-dns
 
 # Use a specific language
 natbench --lang de
 
-# List available protocols/exporters/scorers
-natbench --list-protocols
-natbench --list-exporters
-natbench --list-scorers
+# List available benchmark profiles
+natbench --list-profiles
+
+# Run with a profile
+natbench --profile speed
+natbench --profile security
 ```
 
 ### GUI

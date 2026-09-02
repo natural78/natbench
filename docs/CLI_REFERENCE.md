@@ -92,9 +92,7 @@ natbench-gui            # same via installed entry point
 ## Informational
 
 ```bash
-natbench --list-protocols
-natbench --list-exporters
-natbench --list-scorers
+natbench --list-profiles
 natbench --version
 ```
 
