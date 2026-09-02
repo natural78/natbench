@@ -10,8 +10,8 @@ Plugin API versioning: plugins declare ``PLUGIN_API_VERSION`` they were
 built for; the loader rejects plugins whose MAJOR differs from ours.
 """
 
-__version__      = "1.0.0"
-__version_info__ = (1, 0, 0)
+__version__      = "1.1.0"
+__version_info__ = (1, 1, 0)
 
 #: Minimum plugin API version accepted (MAJOR must match exactly).
 PLUGIN_API_VERSION       = "1.0"

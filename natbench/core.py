@@ -374,7 +374,7 @@ def query_server(
         QueryResult
     """
     packet = build_dns_query(domain, qtype)
-    ip = server.get("ip4") or server.get("ip6", "")
+    ip = server.get("ip") or server.get("ip4") or server.get("ip6", "")
     port = int(server.get("port", 53))
 
     if protocol == "udp":
@@ -545,7 +545,7 @@ def test_server(
         ServerStats (score is computed and set before returning).
     """
     name = server_dict.get("name", "unknown")
-    ip = server_dict.get("ip4") or server_dict.get("ip6", "")
+    ip = server_dict.get("ip") or server_dict.get("ip4") or server_dict.get("ip6", "")
 
     # --- Latency queries ---
     latencies: list[float] = []
@@ -671,7 +671,7 @@ class AsyncBenchmark:
                     # Build a minimal failure record
                     stats = ServerStats(
                         name=srv.get("name", "unknown"),
-                        ip=srv.get("ip4") or srv.get("ip6", ""),
+                        ip=srv.get("ip") or srv.get("ip4") or srv.get("ip6", ""),
                         protocol=protocol,
                         server_info=srv,
                     )

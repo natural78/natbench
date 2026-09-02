@@ -7,8 +7,11 @@ All text is routed through i18n.t() and switches language dynamically.
 
 from __future__ import annotations
 
+import json
+import os
 import threading
 import time
+from pathlib import Path
 
 try:
     import tkinter as tk
@@ -52,6 +55,7 @@ try:
     )
     from .updater import check_for_updates
     from .profiles import list_profiles, load_profile, save_profile, delete_profile, validate_profile
+    from .__version__ import __version__ as _APP_VERSION, __author__ as _APP_AUTHOR, __url__ as _APP_URL
 except ImportError:
     import sys, pathlib
     sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
@@ -68,27 +72,145 @@ except ImportError:
     )
     from natbench.updater import check_for_updates
     from natbench.profiles import list_profiles, load_profile, save_profile, delete_profile, validate_profile
+    from natbench.__version__ import __version__ as _APP_VERSION, __author__ as _APP_AUTHOR, __url__ as _APP_URL
 
 # ---------------------------------------------------------------------------
 # Colour palette (dark theme)
 # ---------------------------------------------------------------------------
 
-C = {
-    "bg":        "#1a1a2e",
-    "panel":     "#16213e",
-    "accent":    "#0f3460",
-    "highlight": "#e94560",
-    "gold":      "#ffaa00",
-    "fg":        "#e0e0e0",
-    "fg_dim":    "#888899",
-    "green":     "#4caf50",
-    "yellow":    "#ffcc00",
-    "red":       "#e94560",
-    "treesel":   "#0f3460",
-    "entry_bg":  "#0d1b34",
+_THEMES: dict[str, dict[str, str]] = {
+    "dark": {
+        "bg":        "#1a1a2e",
+        "panel":     "#16213e",
+        "accent":    "#0f3460",
+        "highlight": "#e94560",
+        "gold":      "#ffaa00",
+        "fg":        "#e0e0e0",
+        "fg_dim":    "#888899",
+        "green":     "#4caf50",
+        "yellow":    "#ffcc00",
+        "red":       "#e94560",
+        "treesel":   "#0f3460",
+        "entry_bg":  "#0d1b34",
+    },
+    "light": {
+        "bg":        "#f4f6f8",
+        "panel":     "#dde3ea",
+        "accent":    "#3a7bd5",
+        "highlight": "#c0392b",
+        "gold":      "#b8860b",
+        "fg":        "#1a1a2e",
+        "fg_dim":    "#555566",
+        "green":     "#27ae60",
+        "yellow":    "#f39c12",
+        "red":       "#c0392b",
+        "treesel":   "#aac4e8",
+        "entry_bg":  "#ffffff",
+    },
+    "colorblind": {           # Okabe-Ito safe palette on neutral dark gray
+        "bg":        "#1c1c1c",
+        "panel":     "#2a2a2a",
+        "accent":    "#0072b2",  # blue
+        "highlight": "#e69f00",  # orange
+        "gold":      "#f0e442",  # yellow
+        "fg":        "#ffffff",
+        "fg_dim":    "#aaaaaa",
+        "green":     "#009e73",  # bluish-green
+        "yellow":    "#f0e442",
+        "red":       "#d55e00",  # vermillion
+        "treesel":   "#005b8e",
+        "entry_bg":  "#242424",
+    },
+    "high_contrast": {
+        "bg":        "#000000",
+        "panel":     "#111111",
+        "accent":    "#0055ff",
+        "highlight": "#ffff00",
+        "gold":      "#ffff00",
+        "fg":        "#ffffff",
+        "fg_dim":    "#cccccc",
+        "green":     "#00ff00",
+        "yellow":    "#ffff00",
+        "red":       "#ff0000",
+        "treesel":   "#0055ff",
+        "entry_bg":  "#000011",
+    },
 }
 
-_PROTOCOLS = ["udp", "tcp", "dot", "doh"]
+C = dict(_THEMES["dark"])  # active theme, mutable copy
+_CURRENT_THEME = "dark"
+
+_PROTOCOLS = ["udp", "tcp", "dot", "doh", "udp+tcp", "all"]
+
+# ---------------------------------------------------------------------------
+# App icon (base64-encoded 64×64 PNG generated from assets/icon.svg)
+# ---------------------------------------------------------------------------
+
+_ICON_B64 = (
+    "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"
+    "8EZqsKkPAAAAAElFTkSuQmCC"
+)
+
+
+def _set_app_icon(root: tk.Tk) -> None:
+    """Set the application window icon from embedded base64 PNG data."""
+    try:
+        img = tk.PhotoImage(data=_ICON_B64)
+        root.iconphoto(True, img)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # TTK dark-theme style (used when customtkinter is absent)
@@ -154,6 +276,13 @@ def _apply_dark_ttk_style() -> None:
     style.configure("TScrollbar",
                     background=panel, troughcolor=bg,
                     arrowcolor=fg, borderwidth=0)
+    style.configure("Vertical.TScrollbar", width=14, arrowsize=14)
+    style.configure("Horizontal.TScrollbar", width=14, arrowsize=14)
+    style.map("TCombobox",
+              fieldbackground=[("readonly", entry_bg)],
+              foreground=[("readonly", fg)],
+              selectbackground=[("readonly", accent)],
+              selectforeground=[("readonly", fg)])
 
 
 # ---------------------------------------------------------------------------
@@ -207,6 +336,7 @@ _SERVER_GROUPS: dict[str, list[dict]] = {
         if any(t in s.get("tags", []) for t in ("china", "russia", "canada", "asia"))
     ],
     "Community": get_servers_by_tag("community"),
+    "ISP": get_servers_by_tag("isp"),
 }
 
 
@@ -232,6 +362,7 @@ class NatBenchApp:
         self._stop_event = threading.Event()
         self._custom_servers: list[dict] = []
         self._server_vars: dict[str, tk.BooleanVar] = {}
+        self._prev_scores: dict[str, float] = self._load_history()
         # Auto-detected system/ISP DNS servers
         try:
             self._system_dns_servers: list[dict] = get_system_dns_servers()
@@ -251,11 +382,45 @@ class NatBenchApp:
             ctk.set_appearance_mode("dark")
             ctk.set_default_color_theme("blue")
 
+        _set_app_icon(self._root)
         self._build_menu()
         self._build_top_bar()
         self._build_main_area()
         self._build_status_bar()
 
+        # Apply persisted settings
+        _s = self._load_settings()
+        if _s.get("geometry"):
+            try:
+                self._root.geometry(_s["geometry"])
+            except Exception:
+                pass
+        if _s.get("lang"):
+            self._lang = _s["lang"]
+            self._lang_var.set(f"{LANG_NAMES.get(_s['lang'], _s['lang'])} ({_s['lang']})")
+        if _s.get("theme") and _s["theme"] in _THEMES:
+            self._apply_theme(_s["theme"])
+        if _s.get("font_size"):
+            try:
+                self._font_size_var.set(_s["font_size"])
+                self._set_font_size()
+            except Exception:
+                pass
+        if _s.get("col_widths") and hasattr(self, "_tree"):
+            for col, w in _s["col_widths"].items():
+                try:
+                    self._tree.column(col, width=int(w))
+                except Exception:
+                    pass
+        if _s.get("sash_x") and hasattr(self, "_pane"):
+            try:
+                self._pane.update()
+                self._pane.sash_place(0, int(_s["sash_x"]), 0)
+            except Exception:
+                pass
+
+        self._root.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._set_font_size()  # sync rowheight with initial font setting
         self._refresh_all_labels()
         self._update_current_dns_display()
 
@@ -265,6 +430,71 @@ class NatBenchApp:
 
     def _t(self, key: str, **kwargs: object) -> str:
         return t(key, self._lang, **kwargs)
+
+    # ------------------------------------------------------------------
+    # Settings persistence
+    # ------------------------------------------------------------------
+
+    _SETTINGS_PATH = Path.home() / ".config" / "natbench" / "settings.json"
+
+    def _load_settings(self) -> dict:
+        try:
+            if self._SETTINGS_PATH.exists():
+                with open(self._SETTINGS_PATH) as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+
+    def _save_settings(self) -> None:
+        try:
+            self._SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            settings: dict = {
+                "geometry": self._root.winfo_geometry(),
+                "theme": _CURRENT_THEME,
+                "lang": self._lang,
+                "font_size": self._font_size_var.get() if hasattr(self, "_font_size_var") else 9,
+            }
+            if hasattr(self, "_tree"):
+                settings["col_widths"] = {
+                    col: self._tree.column(col, "width")
+                    for col in self._tree["columns"]
+                }
+            if hasattr(self, "_pane"):
+                try:
+                    settings["sash_x"] = self._pane.sash_coord(0)[0]
+                except Exception:
+                    pass
+            with open(self._SETTINGS_PATH, "w") as f:
+                json.dump(settings, f, indent=2)
+        except Exception:
+            pass
+
+    _HISTORY_PATH = Path.home() / ".config" / "natbench" / "history.json"
+
+    @staticmethod
+    def _load_history() -> dict:
+        try:
+            p = NatBenchApp._HISTORY_PATH
+            if p.exists():
+                with open(p) as f:
+                    return json.load(f)
+        except Exception:
+            pass
+        return {}
+
+    def _save_history(self, results: list) -> None:
+        try:
+            self._HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            data = {s.name: s.median_ms for s in results if s.median_ms is not None}
+            with open(self._HISTORY_PATH, "w") as f:
+                json.dump(data, f)
+        except Exception:
+            pass
+
+    def _on_close(self) -> None:
+        self._save_settings()
+        self._root.destroy()
 
     # ------------------------------------------------------------------
     # Build: menu bar
@@ -285,9 +515,11 @@ class NatBenchApp:
                                    activebackground=C["accent"])
         self._menubar.add_cascade(label=self._t("menu_file"), menu=self._menu_file)
         self._menu_file.add_command(label=self._t("btn_export"),
-                                     command=self._on_export)
+                                     command=self._on_export,
+                                     accelerator="Ctrl+E")
         self._menu_file.add_separator()
-        self._menu_file.add_command(label="Exit", command=self._root.destroy)
+        self._menu_file.add_command(label="Exit", command=self._root.destroy,
+                                     accelerator="Alt+F4")
 
         # Run
         self._menu_run = tk.Menu(self._menubar, tearoff=False,
@@ -295,12 +527,15 @@ class NatBenchApp:
                                   activebackground=C["accent"])
         self._menubar.add_cascade(label=self._t("menu_run"), menu=self._menu_run)
         self._menu_run.add_command(label=self._t("btn_start"),
-                                    command=self._on_start)
+                                    command=self._on_start,
+                                    accelerator="Ctrl+R")
         self._menu_run.add_command(label=self._t("btn_stop"),
-                                    command=self._on_stop)
+                                    command=self._on_stop,
+                                    accelerator="Ctrl+T")
         self._menu_run.add_separator()
         self._menu_run.add_command(label=self._t("btn_reset"),
-                                    command=self._on_clear)
+                                    command=self._on_clear,
+                                    accelerator="Ctrl+Shift+R")
 
         # Settings
         self._menu_settings = tk.Menu(self._menubar, tearoff=False,
@@ -318,6 +553,15 @@ class NatBenchApp:
                 label=f"{name} ({code})",
                 command=lambda c=code: self._change_lang(c),
             )
+        theme_menu = tk.Menu(self._menu_settings, tearoff=False,
+                             bg=C["panel"], fg=C["fg"],
+                             activebackground=C["accent"])
+        self._menu_settings.add_cascade(label="Theme", menu=theme_menu)
+        for theme_name in _THEMES:
+            theme_menu.add_command(
+                label=theme_name.replace("_", " ").title(),
+                command=lambda tn=theme_name: self._apply_theme(tn),
+            )
 
         # Help
         self._menu_help = tk.Menu(self._menubar, tearoff=False,
@@ -325,11 +569,19 @@ class NatBenchApp:
                                    activebackground=C["accent"])
         self._menubar.add_cascade(label=self._t("menu_help"), menu=self._menu_help)
         self._menu_help.add_command(label=self._t("menu_about"),
-                                     command=self._show_about)
+                                     command=self._show_about,
+                                     accelerator="F1")
         self._menu_help.add_command(
             label="Check for Updates",
             command=self._check_for_updates_gui,
         )
+
+        # Keyboard bindings
+        self._root.bind("<Control-e>", lambda e: self._on_export())
+        self._root.bind("<Control-r>", lambda e: self._on_start())
+        self._root.bind("<Control-t>", lambda e: self._on_stop())
+        self._root.bind("<Control-R>", lambda e: self._on_clear())
+        self._root.bind("<F1>", lambda e: self._show_about())
 
     # ------------------------------------------------------------------
     # Build: top bar
@@ -353,8 +605,7 @@ class NatBenchApp:
             font=("Segoe UI", 9),
         ).pack(side="left", padx=(0, 20), pady=8, anchor="s")
 
-        # Language selector
-        tk.Label(bar, text="Lang:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
+        # Language selector (widget packed first so label appears to the left)
         self._lang_var = tk.StringVar(value=self._lang)
         lang_opts = [f"{LANG_NAMES.get(c, c)} ({c})" for c in SUPPORTED_LANGS]
         self._lang_cb = ttk.Combobox(
@@ -365,59 +616,141 @@ class NatBenchApp:
         self._lang_cb.set(f"{LANG_NAMES.get(self._lang, self._lang)} ({self._lang})")
         self._lang_cb.pack(side="right", padx=(0, 12), pady=10)
         self._lang_cb.bind("<<ComboboxSelected>>", self._on_lang_change)
+        tk.Label(bar, text="Lang:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
+
+        # AF (address-family) selector
+        tk.Label(bar, text="AF:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
+        self._af_var = tk.StringVar(value="auto")
+        af_cb = ttk.Combobox(bar, textvariable=self._af_var,
+                             values=["auto", "ipv4", "ipv6"],
+                             state="readonly", width=6)
+        af_cb.pack(side="right", padx=(0, 8), pady=10)
 
         # Protocol selector
-        tk.Label(bar, text="Protocol:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
         self._protocol_var = tk.StringVar(value="udp")
         proto_cb = ttk.Combobox(
             bar, textvariable=self._protocol_var,
             values=_PROTOCOLS, state="readonly", width=6,
         )
         proto_cb.pack(side="right", padx=(0, 12), pady=10)
+        tk.Label(bar, text="Protocol:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
+
+        # Font size spinbox
+        self._font_size_var = tk.IntVar(value=9)
+        font_spin = ttk.Spinbox(
+            bar, textvariable=self._font_size_var,
+            from_=7, to=14, width=3,
+            command=self._set_font_size,
+        )
+        font_spin.pack(side="right", padx=(0, 12), pady=10)
+        tk.Label(bar, text="Font:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
 
         # Query count
-        tk.Label(bar, text="Queries:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
         self._count_var = tk.IntVar(value=10)
         count_spin = ttk.Spinbox(
             bar, textvariable=self._count_var,
             from_=1, to=100, width=5,
         )
         count_spin.pack(side="right", padx=(0, 12), pady=10)
+        tk.Label(bar, text="Queries:", bg=C["panel"], fg=C["fg_dim"]).pack(side="right", padx=(0, 4))
 
     # ------------------------------------------------------------------
     # Build: main area (left panel + notebook)
     # ------------------------------------------------------------------
 
     def _build_main_area(self) -> None:
-        pane = tk.PanedWindow(
+        self._pane = tk.PanedWindow(
             self._root, orient="horizontal",
             bg=C["bg"], sashwidth=5, sashrelief="flat",
         )
-        pane.pack(fill="both", expand=True, padx=6, pady=(4, 2))
+        self._pane.pack(fill="both", expand=True, padx=6, pady=(4, 2))
 
         # --- Left panel ---
-        left = tk.Frame(pane, bg=C["panel"], width=240)
+        left = tk.Frame(self._pane, bg=C["panel"], width=260)
         left.pack_propagate(False)
-        pane.add(left, minsize=180)
+        self._pane.add(left, minsize=200)
         self._build_left_panel(left)
 
         # --- Right: Notebook ---
-        right = tk.Frame(pane, bg=C["bg"])
-        pane.add(right, minsize=500)
+        right = tk.Frame(self._pane, bg=C["bg"])
+        self._pane.add(right, minsize=500)
         self._build_notebook(right)
 
-    def _build_left_panel(self, parent: tk.Frame) -> None:
+        # Set default sash position after layout
+        self._pane.update()
+        self._pane.sash_place(0, 260, 0)
+
+    def _make_collapsible_group(self, parent: tk.Frame, title: str,
+                                initially_expanded: bool = True,
+                                group_vars: Optional[list] = None):
+        """Create a collapsible group. Returns (header_frame, content_frame)."""
+        state = {"expanded": initially_expanded}
+        content = tk.Frame(parent, bg=C["panel"])
+
+        def toggle() -> None:
+            state["expanded"] = not state["expanded"]
+            if state["expanded"]:
+                content.pack(fill="x", after=header_frame)
+                arrow_btn.config(text="▼")
+            else:
+                content.pack_forget()
+                arrow_btn.config(text="▶")
+
+        def _on_group_check() -> None:
+            val = group_var.get()
+            for v in (group_vars or []):
+                v.set(val)
+
+        header_frame = tk.Frame(parent, bg=C["panel"])
+        header_frame.pack(fill="x", pady=(4, 0))
+
+        group_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            header_frame, variable=group_var,
+            bg=C["panel"], selectcolor=C["accent"],
+            activebackground=C["panel"],
+            command=_on_group_check,
+        ).pack(side="left", padx=(2, 0))
+
+        pfx = "▼" if initially_expanded else "▶"
+        arrow_btn = tk.Button(
+            header_frame, text=pfx,
+            bg=C["panel"], fg=C["gold"],
+            font=("Segoe UI", 8), width=2,
+            relief="flat", cursor="hand2",
+            command=toggle, activebackground=C["accent"],
+            activeforeground=C["fg"],
+        )
+        arrow_btn.pack(side="left")
+
         tk.Label(
+            header_frame, text=title,
+            bg=C["panel"], fg=C["gold"],
+            font=("Segoe UI", 8, "bold"), anchor="w",
+        ).pack(side="left", fill="x", expand=True)
+
+        self._group_headers.append(header_frame)
+        if initially_expanded:
+            content.pack(fill="x")
+        return header_frame, content
+
+    def _build_left_panel(self, parent: tk.Frame) -> None:
+        self._group_headers: list[tk.Button] = []
+
+        self._lbl_all_servers = tk.Label(
             parent, text=self._t("label_all_servers"),
             bg=C["panel"], fg=C["gold"],
             font=("Segoe UI", 10, "bold"),
-        ).pack(anchor="w", padx=10, pady=(10, 4))
+        )
+        self._lbl_all_servers.pack(anchor="w", padx=10, pady=(10, 4))
 
         # Select all / none
         btn_row = tk.Frame(parent, bg=C["panel"])
         btn_row.pack(fill="x", padx=8, pady=(0, 4))
-        ttk.Button(btn_row, text="All", command=self._select_all_servers, width=6).pack(side="left")
-        ttk.Button(btn_row, text="None", command=self._select_no_servers, width=6).pack(side="left", padx=(4, 0))
+        self._btn_all = ttk.Button(btn_row, text="All", command=self._select_all_servers, width=6)
+        self._btn_all.pack(side="left")
+        self._btn_none = ttk.Button(btn_row, text="None", command=self._select_no_servers, width=6)
+        self._btn_none.pack(side="left", padx=(4, 0))
 
         # Scrollable server list
         list_frame = tk.Frame(parent, bg=C["panel"])
@@ -440,7 +773,15 @@ class NatBenchApp:
         canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_win, width=e.width))
         canvas.bind("<MouseWheel>", lambda e: canvas.yview_scroll(-1 * (e.delta // 120), "units"))
 
-        # --- System/ISP DNS group at the top ---
+        # --- Quick-select row ---
+        best_row = tk.Frame(inner, bg=C["panel"])
+        best_row.pack(fill="x", pady=(4, 2))
+        ttk.Button(best_row, text="⭐ Best", command=self._select_best_servers, width=7).pack(side="left")
+        ttk.Button(best_row, text="🔒 Secure", command=self._select_secure_servers, width=7).pack(side="left", padx=(2, 0))
+        ttk.Button(best_row, text="⚡ Fast", command=self._select_fast_servers, width=7).pack(side="left", padx=(2, 0))
+        ttk.Button(best_row, text="🌍 Region", command=self._select_region_servers, width=7).pack(side="left", padx=(2, 0))
+
+        # --- System/ISP DNS group at the top (always visible, no collapse) ---
         if self._system_dns_servers:
             grp_lbl = tk.Label(
                 inner, text=" \U0001f3e0 Your System DNS",
@@ -472,25 +813,31 @@ class NatBenchApp:
         for group_name, servers in _SERVER_GROUPS.items():
             if not servers:
                 continue
-            grp_lbl = tk.Label(
-                inner, text=f" {group_name}",
-                bg=C["accent"], fg=C["gold"],
-                font=("Segoe UI", 8, "bold"),
-                anchor="w",
+            # Build/reuse vars for this group first (fix duplicate-key bug)
+            grp_var_list: list[tk.BooleanVar] = []
+            for srv in servers:
+                name = srv.get("name", "?")
+                if name not in self._server_vars:
+                    self._server_vars[name] = tk.BooleanVar(value=True)
+                grp_var_list.append(self._server_vars[name])
+
+            initially_expanded = group_name != "ISP"
+            _header, content_frame = self._make_collapsible_group(
+                inner, group_name, initially_expanded=initially_expanded,
+                group_vars=grp_var_list,
             )
-            grp_lbl.pack(fill="x", pady=(6, 1))
 
             for srv in servers:
                 name = srv.get("name", "?")
-                var = tk.BooleanVar(value=True)
-                self._server_vars[name] = var
-                cb = tk.Checkbutton(
-                    inner, text=name[:30], variable=var,
+                var = self._server_vars[name]
+                ip_disp = srv.get("ip4") or srv.get("ip6") or ""
+                display = f"{name}  {ip_disp}" if ip_disp else name
+                tk.Checkbutton(
+                    content_frame, text=display[:42], variable=var,
                     bg=C["panel"], fg=C["fg"],
                     selectcolor=C["accent"], activebackground=C["panel"],
                     font=("Segoe UI", 8), anchor="w",
-                )
-                cb.pack(fill="x", padx=4)
+                ).pack(fill="x", padx=4)
 
         # Custom server entry
         sep = ttk.Separator(parent, orient="horizontal")
@@ -506,7 +853,8 @@ class NatBenchApp:
         custom_row.pack(fill="x", padx=8, pady=(4, 8))
         self._custom_entry = ttk.Entry(custom_row, width=16)
         self._custom_entry.pack(side="left", fill="x", expand=True)
-        ttk.Button(custom_row, text="Add", command=self._add_custom_server, width=5).pack(side="left", padx=(4, 0))
+        self._btn_add = ttk.Button(custom_row, text="Add", command=self._add_custom_server, width=5)
+        self._btn_add.pack(side="left", padx=(4, 0))
 
     def _build_notebook(self, parent: tk.Frame) -> None:
         nb = ttk.Notebook(parent)
@@ -543,27 +891,40 @@ class NatBenchApp:
         self._tab_about = tab_about
         self._build_about_tab(tab_about)
 
+        # --- Tab 6: Traceroute ---
+        tab_trace = tk.Frame(nb, bg=C["bg"])
+        nb.add(tab_trace, text="Traceroute")
+        self._tab_trace = tab_trace
+        self._build_traceroute_tab(tab_trace)
+
     # ------------------------------------------------------------------
     # Tab: Benchmark
     # ------------------------------------------------------------------
 
     def _build_benchmark_tab(self, parent: tk.Frame) -> None:
-        # Progress area
+        # Progress bar row
         prog_frame = tk.Frame(parent, bg=C["bg"])
-        prog_frame.pack(fill="x", padx=10, pady=(8, 4))
+        prog_frame.pack(fill="x", padx=10, pady=(8, 0))
 
         self._progress_var = tk.DoubleVar(value=0.0)
         self._progress_bar = ttk.Progressbar(
             prog_frame, variable=self._progress_var,
-            maximum=100, length=400, mode="determinate",
+            maximum=100, mode="determinate",
         )
         self._progress_bar.pack(side="left", fill="x", expand=True)
 
-        self._lbl_current = tk.Label(
+        self._lbl_progress_status = tk.Label(
             prog_frame, text="", bg=C["bg"], fg=C["fg_dim"],
-            font=("Segoe UI", 8), width=28, anchor="w",
+            font=("Segoe UI", 8), width=8, anchor="e",
         )
-        self._lbl_current.pack(side="left", padx=(8, 0))
+        self._lbl_progress_status.pack(side="right", padx=(4, 0))
+
+        # Currently-testing label on its own row (full width, no truncation)
+        self._lbl_current = tk.Label(
+            parent, text="", bg=C["bg"], fg=C["fg_dim"],
+            font=("Segoe UI", 8), anchor="w",
+        )
+        self._lbl_current.pack(fill="x", padx=10, pady=(1, 4))
 
         # Start/Stop buttons
         btn_row = tk.Frame(parent, bg=C["bg"])
@@ -586,7 +947,7 @@ class NatBenchApp:
 
         # Results treeview
         cols = (
-            "rank", "name", "median", "p95", "min", "max",
+            "rank", "name", "ip", "median", "p95", "min", "max",
             "reliability", "score", "dnssec", "malware", "ads",
         )
         tree_frame = tk.Frame(parent, bg=C["bg"])
@@ -597,7 +958,7 @@ class NatBenchApp:
             selectmode="browse",
         )
         col_widths = {
-            "rank": 42, "name": 180, "median": 80, "p95": 72,
+            "rank": 42, "name": 180, "ip": 120, "median": 80, "p95": 72,
             "min": 64, "max": 64, "reliability": 90, "score": 60,
             "dnssec": 64, "malware": 68, "ads": 48,
         }
@@ -606,7 +967,8 @@ class NatBenchApp:
                                command=lambda c=col: self._sort_tree(c))
             self._tree.column(col, width=col_widths.get(col, 80),
                               anchor="center" if col in ("rank", "dnssec", "malware", "ads") else "w",
-                              stretch=(col == "name"))
+                              minwidth=30,
+                              stretch=True)
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
         self._tree.configure(yscrollcommand=vsb.set)
@@ -626,6 +988,7 @@ class NatBenchApp:
         self._ctx_menu.add_command(label="Set as DNS", command=self._ctx_set_dns)
         self._ctx_menu.add_command(label="Copy IP", command=self._ctx_copy_ip)
         self._ctx_menu.add_command(label="Copy connect string", command=self._ctx_copy_connect)
+        self._ctx_menu.add_command(label="Traceroute", command=self._ctx_traceroute)
 
     # ------------------------------------------------------------------
     # Tab: System DNS
@@ -697,6 +1060,7 @@ class NatBenchApp:
 
         tk.Label(frm, text="Format:", bg=C["bg"], fg=C["fg"]).grid(row=0, column=0, sticky="w", pady=4)
         self._export_fmt = tk.StringVar(value="json")
+        self._export_fmt.trace_add("write", self._on_export_fmt_change)
         for i, fmt in enumerate(["json", "csv", "markdown", "html"]):
             tk.Radiobutton(
                 frm, text=fmt.upper(), variable=self._export_fmt, value=fmt,
@@ -905,6 +1269,8 @@ class NatBenchApp:
     # ------------------------------------------------------------------
 
     def _build_about_tab(self, parent: tk.Frame) -> None:
+        _ver, _author, _url = _APP_VERSION, _APP_AUTHOR, _APP_URL
+
         tk.Label(
             parent, text="NatBench",
             bg=C["bg"], fg=C["highlight"],
@@ -918,32 +1284,111 @@ class NatBenchApp:
         ).pack()
 
         tk.Label(
-            parent, text="Version 1.0.0",
+            parent, text=f"Version {_ver}",
             bg=C["bg"], fg=C["fg"],
             font=("Segoe UI", 10),
         ).pack(pady=(12, 2))
 
         tk.Label(
-            parent, text="License: MIT",
+            parent, text=f"License: MIT  |  Author: {_author}",
             bg=C["bg"], fg=C["fg_dim"],
         ).pack()
 
-        tk.Label(
-            parent, text="https://github.com/natbench/natbench",
+        _link_font = ("Segoe UI", 10, "underline")
+        url_lbl = tk.Label(
+            parent, text="GitHub: github.com/natural78/natbench",
             bg=C["bg"], fg=C["accent"],
-            cursor="hand2",
-        ).pack(pady=4)
+            cursor="hand2", font=_link_font,
+        )
+        url_lbl.pack(pady=(4, 1))
+        url_lbl.bind("<Button-1>", lambda e: self._open_url("https://github.com/natural78/natbench"))
+
+        codeberg_lbl = tk.Label(
+            parent, text="Codeberg: codeberg.org/natural78/natbench",
+            bg=C["bg"], fg=C["accent"],
+            cursor="hand2", font=_link_font,
+        )
+        codeberg_lbl.pack(pady=1)
+        codeberg_lbl.bind("<Button-1>", lambda e: self._open_url("https://codeberg.org/natural78/natbench"))
+
+        blog_lbl = tk.Label(
+            parent, text="Blog & Projekt: natural.yt",
+            bg=C["bg"], fg=C["accent"],
+            cursor="hand2", font=_link_font,
+        )
+        blog_lbl.pack(pady=(1, 4))
+        blog_lbl.bind("<Button-1>", lambda e: self._open_url("https://natural.yt"))
 
         tk.Label(
             parent,
             text=(
                 f"{len(SERVER_DB)} DNS servers in database\n"
                 "Protocols: UDP · TCP · DoT · DoH\n"
-                "21 languages supported"
+                f"{len(SUPPORTED_LANGS)} languages supported"
             ),
             bg=C["bg"], fg=C["fg_dim"],
             justify="center",
         ).pack(pady=16)
+
+    # ------------------------------------------------------------------
+    # Tab: Traceroute
+    # ------------------------------------------------------------------
+
+    def _build_traceroute_tab(self, parent: tk.Frame) -> None:
+        # Top controls row
+        ctrl = tk.Frame(parent, bg=C["bg"])
+        ctrl.pack(fill="x", padx=10, pady=(10, 4))
+
+        tk.Label(ctrl, text="Host / IP:", bg=C["bg"], fg=C["fg"]).pack(side="left")
+        self._trace_host_var = tk.StringVar(value="")
+        self._trace_entry = ttk.Entry(ctrl, textvariable=self._trace_host_var, width=30)
+        self._trace_entry.pack(side="left", padx=(6, 8))
+
+        self._trace_af_var = tk.StringVar(value="auto")
+        af_trace = ttk.Combobox(ctrl, textvariable=self._trace_af_var,
+                                values=["auto", "ipv4", "ipv6"],
+                                state="readonly", width=6)
+        af_trace.pack(side="left", padx=(0, 6))
+
+        self._trace_btn = ttk.Button(ctrl, text="Run Traceroute", command=self._run_traceroute)
+        self._trace_btn.pack(side="left")
+
+        self._trace_stop_btn = ttk.Button(ctrl, text="Stop", command=self._stop_traceroute,
+                                           state="disabled")
+        self._trace_stop_btn.pack(side="left", padx=(6, 0))
+
+        tk.Label(ctrl, text="  From results:", bg=C["bg"], fg=C["fg_dim"],
+                 font=("Segoe UI", 8)).pack(side="left", padx=(16, 4))
+        self._trace_pick_btn = ttk.Button(ctrl, text="Use selected server",
+                                           command=self._trace_use_selected)
+        self._trace_pick_btn.pack(side="left")
+
+        # Output area
+        out_frame = tk.Frame(parent, bg=C["bg"])
+        out_frame.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+
+        self._trace_text = tk.Text(
+            out_frame, bg=C["panel"], fg=C["fg"],
+            font=("Consolas", 9), wrap="none",
+            state="disabled", relief="flat", borderwidth=1,
+            insertbackground=C["fg"],
+        )
+        trace_vsb = ttk.Scrollbar(out_frame, orient="vertical", command=self._trace_text.yview)
+        trace_hsb = ttk.Scrollbar(out_frame, orient="horizontal", command=self._trace_text.xview)
+        self._trace_text.configure(yscrollcommand=trace_vsb.set, xscrollcommand=trace_hsb.set)
+        trace_vsb.pack(side="right", fill="y")
+        trace_hsb.pack(side="bottom", fill="x")
+        self._trace_text.pack(fill="both", expand=True)
+
+        # Tag colors
+        self._trace_text.tag_configure("header", foreground=C["gold"], font=("Consolas", 9, "bold"))
+        self._trace_text.tag_configure("hop", foreground=C["fg"])
+        self._trace_text.tag_configure("timeout", foreground=C["fg_dim"])
+        self._trace_text.tag_configure("error", foreground=C["red"])
+        self._trace_text.tag_configure("done", foreground=C["green"])
+
+        self._trace_proc: Optional[object] = None
+        self._trace_running = False
 
     # ------------------------------------------------------------------
     # Build: status bar
@@ -976,6 +1421,103 @@ class NatBenchApp:
         self._lbl_progress_status.pack(side="right", padx=10)
 
     # ------------------------------------------------------------------
+    # Theme switching
+    # ------------------------------------------------------------------
+
+    def _apply_theme(self, theme_name: str) -> None:
+        global C, _CURRENT_THEME
+        _CURRENT_THEME = theme_name
+        old = dict(C)  # snapshot before update
+        new = _THEMES.get(theme_name, _THEMES["dark"])
+        C.update(new)
+
+        # Build colour-remap: old_hex → new_hex for every role
+        remap_bg: dict[str, str] = {}
+        remap_fg: dict[str, str] = {}
+        for role in ("bg", "panel", "accent", "highlight", "gold", "entry_bg", "treesel"):
+            if old.get(role) != C[role]:
+                remap_bg[old[role].lower()] = C[role]
+        for role in ("fg", "fg_dim", "green", "yellow", "red"):
+            if old.get(role) != C[role]:
+                remap_fg[old[role].lower()] = C[role]
+        # Also remap accent used as fg on links
+        remap_fg[old.get("accent", "").lower()] = C["accent"]
+
+        # ttk styles
+        style = ttk.Style()
+        style.configure(".", background=C["bg"], foreground=C["fg"],
+                        fieldbackground=C["entry_bg"])
+        style.configure("Treeview", background=C["panel"], foreground=C["fg"],
+                        fieldbackground=C["panel"], rowheight=22)
+        style.configure("Treeview.Heading", background=C["accent"], foreground=C["fg"])
+        style.map("Treeview", background=[("selected", C["treesel"])])
+        style.configure("TNotebook", background=C["bg"])
+        style.configure("TNotebook.Tab", background=C["panel"], foreground=C["fg"])
+        style.map("TNotebook.Tab",
+                  background=[("selected", C["accent"])],
+                  foreground=[("selected", C["highlight"])])
+        style.configure("TProgressbar", troughcolor=C["panel"], background=C["highlight"])
+        style.configure("TCombobox", fieldbackground=C["entry_bg"], foreground=C["fg"])
+        style.configure("TSpinbox", fieldbackground=C["entry_bg"], foreground=C["fg"])
+        style.configure("TLabelframe", background=C["bg"])
+        style.configure("TLabelframe.Label", background=C["bg"], foreground=C["fg"])
+        style.configure("TButton", background=C["panel"], foreground=C["fg"])
+        style.configure("TCheckbutton", background=C["panel"], foreground=C["fg"])
+        style.configure("Vertical.TScrollbar", background=C["panel"],
+                        troughcolor=C["bg"], width=14, arrowsize=14)
+        style.configure("Horizontal.TScrollbar", background=C["panel"],
+                        troughcolor=C["bg"], width=14, arrowsize=14)
+        # For light themes: ensure combobox/entry text is readable
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", C["entry_bg"])],
+                  foreground=[("readonly", C["fg"])],
+                  selectbackground=[("readonly", C["treesel"])],
+                  selectforeground=[("readonly", C["fg"])])
+        style.map("TEntry",
+                  fieldbackground=[("focus", C["entry_bg"]), ("!focus", C["entry_bg"])],
+                  foreground=[("focus", C["fg"]), ("!focus", C["fg"])])
+
+        # Walk all Tk widgets and remap bg/fg by old colour value
+        def _recolor(widget):
+            try:
+                cls = widget.winfo_class()
+                if cls in ("Frame", "Canvas", "Text", "Listbox"):
+                    try:
+                        cur = widget.cget("bg").lower()
+                        if cur in remap_bg:
+                            widget.configure(bg=remap_bg[cur])
+                    except Exception:
+                        pass
+                elif cls == "Label":
+                    try:
+                        cur_bg = widget.cget("bg").lower()
+                        if cur_bg in remap_bg:
+                            widget.configure(bg=remap_bg[cur_bg])
+                    except Exception:
+                        pass
+                    try:
+                        cur_fg = widget.cget("fg").lower()
+                        if cur_fg in remap_fg:
+                            widget.configure(fg=remap_fg[cur_fg])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            for child in widget.winfo_children():
+                _recolor(child)
+
+        _recolor(self._root)
+
+        # Menubar colours
+        try:
+            self._menubar.configure(bg=C["panel"], fg=C["fg"])
+            for m in (self._menu_file, self._menu_run, self._menu_settings, self._menu_help):
+                m.configure(bg=C["panel"], fg=C["fg"],
+                            activebackground=C["accent"], activeforeground=C["fg"])
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
     # Language change
     # ------------------------------------------------------------------
 
@@ -1001,12 +1543,13 @@ class NatBenchApp:
         if hasattr(self, "_notebook"):
             self._notebook.tab(0, text=self._t("label_results"))
             self._notebook.tab(1, text=self._t("label_system_dns"))
-            self._notebook.tab(2, text="Profiles")
+            self._notebook.tab(2, text=self._t("tab_profiles"))
             self._notebook.tab(3, text=self._t("btn_export"))
             self._notebook.tab(4, text=self._t("menu_about"))
+            self._notebook.tab(5, text=self._t("tab_traceroute"))
         # Treeview headings
         if hasattr(self, "_tree"):
-            for col in ("rank", "name", "median", "p95", "min", "max",
+            for col in ("rank", "name", "ip", "median", "p95", "min", "max",
                         "reliability", "score", "dnssec", "malware", "ads"):
                 self._tree.heading(col, text=self._t(f"col_{col}"))
         # Buttons
@@ -1014,11 +1557,33 @@ class NatBenchApp:
             self._btn_start.config(text=self._t("btn_start"))
         if hasattr(self, "_btn_stop"):
             self._btn_stop.config(text=self._t("btn_stop"))
+        if hasattr(self, "_btn_all"):
+            self._btn_all.config(text=self._t("btn_all"))
+        if hasattr(self, "_btn_none"):
+            self._btn_none.config(text=self._t("btn_none"))
+        if hasattr(self, "_btn_add"):
+            self._btn_add.config(text=self._t("btn_add"))
         # Custom server label
         if hasattr(self, "_lbl_custom"):
             self._lbl_custom.config(text=self._t("label_custom_server"))
-        # Menu
+        if hasattr(self, "_lbl_all_servers"):
+            self._lbl_all_servers.config(text=self._t("label_all_servers"))
+        # Menu cascade labels
         self._rebuild_menu_labels()
+        # Update individual menu items (each wrapped independently)
+        for _fn in [
+            lambda: self._menu_file.entryconfig(0, label=self._t("btn_export")),
+            lambda: self._menu_run.entryconfig(0, label=self._t("btn_start")),
+            lambda: self._menu_run.entryconfig(1, label=self._t("btn_stop")),
+            lambda: self._menu_run.entryconfig(3, label=self._t("btn_reset")),
+            lambda: self._menu_help.entryconfig(0, label=self._t("menu_about")),
+            lambda: self._menu_settings.entryconfig(0, label=self._t("menu_language") if self._t("menu_language") != "menu_language" else "Language"),
+            lambda: self._menu_settings.entryconfig(1, label=self._t("menu_theme") if self._t("menu_theme") != "menu_theme" else "Theme"),
+        ]:
+            try:
+                _fn()
+            except Exception:
+                pass
 
     def _rebuild_menu_labels(self) -> None:
         try:
@@ -1029,6 +1594,26 @@ class NatBenchApp:
         except Exception:
             pass
 
+    def _set_font_size(self) -> None:
+        """Update Treeview and global font size when the spinbox changes."""
+        try:
+            size = int(self._font_size_var.get())
+        except (ValueError, tk.TclError):
+            return
+        size = max(7, min(14, size))
+        style = ttk.Style()
+        rowheight = max(18, int(size * 2.2))
+        style.configure("Treeview", font=("Segoe UI", size), rowheight=rowheight)
+        style.configure("Treeview.Heading", font=("Segoe UI", size, "bold"))
+        style.configure(".", font=("Segoe UI", size))
+        # Force immediate redraw on all Treeviews
+        for tv in (getattr(self, "_tree", None), getattr(self, "_profile_tree", None)):
+            if tv:
+                try:
+                    tv.update_idletasks()
+                except Exception:
+                    pass
+
     # ------------------------------------------------------------------
     # Benchmark lifecycle
     # ------------------------------------------------------------------
@@ -1037,41 +1622,67 @@ class NatBenchApp:
         if self._bench_thread and self._bench_thread.is_alive():
             return
 
+        # Determine address-family preference
+        af = self._af_var.get() if hasattr(self, "_af_var") else "auto"
+
+        def _pick_ip(srv: dict):
+            ip4 = srv.get("ip4") or srv.get("ip")
+            ip6 = srv.get("ip6")
+            if af == "ipv4":
+                return ip4
+            elif af == "ipv6":
+                return ip6
+            else:  # auto: prefer ip4, fall back to ip6
+                return ip4 or ip6
+
         # Build selected server pool — system DNS first
         selected: list[dict] = []
         for srv in self._system_dns_servers:
             key = srv.get("_gui_key", "")
             var = self._server_vars.get(key)
             if var and var.get():
-                selected.append(srv)
+                ip = _pick_ip(srv)
+                if ip or srv.get("doh_url") or srv.get("dot_host"):
+                    srv_copy = dict(srv)
+                    if ip:
+                        srv_copy["ip"] = ip
+                    selected.append(srv_copy)
 
         # Regular servers from SERVER_DB
-        selected += [
-            srv for name, var in self._server_vars.items()
-            if var.get() and not name.startswith("__system_")
-            for srv in SERVER_DB
-            if srv.get("name") == name
-        ]
+        for name, var in self._server_vars.items():
+            if not var.get() or name.startswith("__system_"):
+                continue
+            for srv in SERVER_DB:
+                if srv.get("name") == name:
+                    ip = _pick_ip(srv)
+                    if ip or srv.get("doh_url") or srv.get("dot_host"):
+                        srv_copy = dict(srv)
+                        if ip:
+                            srv_copy["ip"] = ip
+                        selected.append(srv_copy)
+                    break
+
         # Add custom servers
-        selected += self._custom_servers
+        for srv in self._custom_servers:
+            ip = _pick_ip(srv)
+            if ip or srv.get("doh_url") or srv.get("dot_host"):
+                srv_copy = dict(srv)
+                if ip:
+                    srv_copy["ip"] = ip
+                selected.append(srv_copy)
 
         if not selected:
             messagebox.showwarning("NatBench", "No servers selected.")
             return
 
         protocol = self._protocol_var.get()
-        # Filter by protocol capability
-        if protocol == "dot":
-            selected = [s for s in selected if s.get("dot_host")]
-        elif protocol == "doh":
-            selected = [s for s in selected if s.get("doh_url")]
+        # Expand multi-protocol tokens
+        if protocol == "all":
+            protocols_to_run = ["udp", "tcp", "dot", "doh"]
+        elif "+" in protocol:
+            protocols_to_run = protocol.split("+")
         else:
-            selected = [s for s in selected if s.get("ip4") or s.get("ip6")]
-
-        if not selected:
-            messagebox.showwarning("NatBench",
-                                   f"No servers support the {protocol.upper()} protocol.")
-            return
+            protocols_to_run = [protocol]
 
         self._stop_event.clear()
         self._results = []
@@ -1082,32 +1693,59 @@ class NatBenchApp:
         self._progress_var.set(0)
 
         count = self._count_var.get()
+        servers_snapshot = list(selected)
 
         def _worker() -> None:
-            done_ref = [0]
-            total = len(selected)
-
-            def _cb(name: str, done: int, _total: int) -> None:
+            all_results: list[ServerStats] = []
+            for proto in protocols_to_run:
                 if self._stop_event.is_set():
-                    return
-                done_ref[0] = done
-                pct = done / total * 100
-                self._root.after(0, lambda n=name, p=pct, d=done, tot=total: (
-                    self._lbl_current.config(text=self._t("msg_testing_server", name=n)),
-                    self._progress_var.set(p),
-                    self._lbl_progress_status.config(text=f"{d}/{tot}"),
-                ))
+                    break
+                # Filter by protocol capability
+                if proto == "dot":
+                    proto_servers = [s for s in servers_snapshot if s.get("dot_host")]
+                elif proto == "doh":
+                    proto_servers = [s for s in servers_snapshot if s.get("doh_url")]
+                else:
+                    proto_servers = [s for s in servers_snapshot if s.get("ip") or s.get("ip4") or s.get("ip6")]
+                if not proto_servers:
+                    continue
 
-            results = run_benchmark(
-                selected,
-                n_queries=count,
-                timeout=3.0,
-                protocol=protocol,
-                progress_cb=_cb,
-                max_workers=16,
-            )
+                total = len(proto_servers)
+                offset = len(all_results)
+
+                def _cb(name: str, done: int, _total: int,
+                        _proto=proto, _offset=offset, _total_all=len(servers_snapshot) * len(protocols_to_run)) -> None:
+                    if self._stop_event.is_set():
+                        return
+                    global_done = _offset + done
+                    grand_total = sum(
+                        len([s for s in servers_snapshot if (
+                            s.get("dot_host") if p == "dot" else
+                            s.get("doh_url") if p == "doh" else
+                            (s.get("ip") or s.get("ip4") or s.get("ip6"))
+                        )]) for p in protocols_to_run
+                    )
+                    pct = global_done / max(grand_total, 1) * 100
+                    ip = next((s.get("ip", s.get("ip4", s.get("ip6", ""))) for s in servers_snapshot if s.get("name") == name), "")
+                    label = f"[{_proto.upper()}] {name}  {ip}" if ip else f"[{_proto.upper()}] {name}"
+                    self._root.after(0, lambda lbl=label, p=pct, gd=global_done, gt=grand_total: (
+                        self._lbl_current.config(text=lbl),
+                        self._progress_var.set(p),
+                        self._lbl_progress_status.config(text=f"{gd}/{gt}"),
+                    ))
+
+                results = run_benchmark(
+                    proto_servers,
+                    n_queries=count,
+                    timeout=3.0,
+                    protocol=proto,
+                    progress_cb=_cb,
+                    max_workers=16,
+                )
+                all_results.extend(results)
+
             if not self._stop_event.is_set():
-                self._root.after(0, lambda r=results: self._on_bench_done(r))
+                self._root.after(0, lambda r=all_results: self._on_bench_done(r))
             else:
                 self._root.after(0, self._on_bench_stopped)
 
@@ -1126,6 +1764,9 @@ class NatBenchApp:
         msg = self._t("msg_done_n_servers", n=len(results))
         self._lbl_current.config(text=msg)
         self._progress_var.set(100)
+        # Save this run as history for next comparison
+        self._save_history(results)
+        self._prev_scores = {s.name: s.median_ms for s in results if s.median_ms is not None}
 
     def _on_bench_stopped(self) -> None:
         self._btn_start.state(["!disabled"])
@@ -1150,12 +1791,27 @@ class NatBenchApp:
             self._tree.delete(item)
 
     def _populate_tree(self, results: list[ServerStats]) -> None:
+        import ipaddress
         self._clear_tree()
+        # Alternating row backgrounds
+        row_bg = [C["panel"], C["bg"]]
+        self._tree.tag_configure("even", background=row_bg[0])
+        self._tree.tag_configure("odd",  background=row_bg[1])
+        self._tree.tag_configure("ok",   foreground=C["fg"])
+        self._tree.tag_configure("warn", foreground=C["yellow"])
+        self._tree.tag_configure("bad",  foreground=C["red"])
+
         for rank, s in enumerate(results, 1):
             rel = f"{s.success_rate * 100:.0f}%"
+            try:
+                addr = ipaddress.ip_address(s.ip)
+                ip_tag = f"IPv6  {s.ip}" if addr.version == 6 else f"IPv4  {s.ip}"
+            except (ValueError, TypeError):
+                ip_tag = s.ip or ""
             values = (
                 rank,
                 s.name,
+                ip_tag,
                 _fmt(s.median_ms),
                 _fmt(s.p95_ms),
                 _fmt(s.min_ms),
@@ -1166,14 +1822,17 @@ class NatBenchApp:
                 _bool_sym(s.malware_blocked),
                 _bool_sym(s.ads_blocked),
             )
-            iid = self._tree.insert("", "end", values=values, tags=(str(rank),))
-            # Tag-based row colouring
-            tag = "ok" if s.success_rate >= 0.95 else "warn" if s.success_rate >= 0.7 else "bad"
-            self._tree.item(iid, tags=(tag,))
-
-        self._tree.tag_configure("ok", foreground=C["fg"])
-        self._tree.tag_configure("warn", foreground=C["yellow"])
-        self._tree.tag_configure("bad", foreground=C["red"])
+            stripe = "even" if rank % 2 == 0 else "odd"
+            rel_tag = "ok" if s.success_rate >= 0.95 else "warn" if s.success_rate >= 0.7 else "bad"
+            # Delta vs. previous run
+            prev_ms = self._prev_scores.get(s.name)
+            if prev_ms is not None and s.median_ms is not None:
+                d = s.median_ms - prev_ms
+                arrow = " ↑" if d < -0.5 else (" ↓" if d > 0.5 else "")
+            else:
+                arrow = ""
+            values = values[:-4] + (f"{s.score:.1f}{arrow}",) + values[-3:]
+            self._tree.insert("", "end", values=values, tags=(stripe, rel_tag))
 
     def _sort_tree(self, col: str) -> None:
         """Sort results by a column (alternates asc/desc)."""
@@ -1182,6 +1841,7 @@ class NatBenchApp:
         key_map = {
             "rank": lambda s: s.score,
             "name": lambda s: s.name.lower(),
+            "ip": lambda s: s.ip or "",
             "median": lambda s: s.median_ms or 9999,
             "p95": lambda s: s.p95_ms or 9999,
             "min": lambda s: s.min_ms or 9999,
@@ -1363,6 +2023,54 @@ class NatBenchApp:
         for var in self._server_vars.values():
             var.set(False)
 
+    def _select_best_servers(self) -> None:
+        """Select servers tagged 'fast' or with DNSSEC."""
+        self._select_no_servers()
+        for name, var in self._server_vars.items():
+            srv = next((s for s in SERVER_DB if s.get("name") == name), None)
+            if srv and ("fast" in srv.get("tags", []) or "dnssec" in srv.get("tags", [])):
+                var.set(True)
+
+    def _select_secure_servers(self) -> None:
+        """Select only servers with malware+dnssec tags."""
+        self._select_no_servers()
+        for name, var in self._server_vars.items():
+            srv = next((s for s in SERVER_DB if s.get("name") == name), None)
+            if srv and "malware" in srv.get("tags", []) and "dnssec" in srv.get("tags", []):
+                var.set(True)
+
+    def _select_fast_servers(self) -> None:
+        """Select only servers tagged 'fast'."""
+        self._select_no_servers()
+        for name, var in self._server_vars.items():
+            srv = next((s for s in SERVER_DB if s.get("name") == name), None)
+            if srv and "fast" in srv.get("tags", []):
+                var.set(True)
+
+    def _select_region_servers(self) -> None:
+        """Select servers from the user's locale country + system DNS."""
+        import locale
+        loc = locale.getdefaultlocale()[0] or ""
+        country = loc.split("_")[-1].upper() if "_" in loc else ""
+        self._select_no_servers()
+        # Always include system DNS
+        for key, var in self._server_vars.items():
+            if key.startswith("__system_"):
+                var.set(True)
+        matched = 0
+        if country:
+            for name, var in self._server_vars.items():
+                srv = next((s for s in SERVER_DB if s.get("name") == name), None)
+                if srv and srv.get("country", "").upper() == country:
+                    var.set(True)
+                    matched += 1
+        # Fallback: select Recommended if no country match
+        if matched == 0:
+            for name, var in self._server_vars.items():
+                srv = next((s for s in SERVER_DB if s.get("name") == name), None)
+                if srv and ("fast" in srv.get("tags", []) or "anycast" in srv.get("tags", [])):
+                    var.set(True)
+
     def _add_custom_server(self) -> None:
         raw = self._custom_entry.get().strip()
         if not raw:
@@ -1391,13 +2099,28 @@ class NatBenchApp:
     # Export
     # ------------------------------------------------------------------
 
+    def _on_export_fmt_change(self, *args) -> None:
+        ext_map = {"json": ".json", "csv": ".csv", "markdown": ".md", "html": ".html"}
+        new_ext = ext_map.get(self._export_fmt.get(), ".txt")
+        cur = self._export_path.get()
+        if cur:
+            import os
+            base = os.path.splitext(cur)[0]
+            self._export_path.set(base + new_ext)
+
     def _browse_export_path(self) -> None:
         fmt = self._export_fmt.get()
         ext_map = {"json": ".json", "csv": ".csv", "markdown": ".md", "html": ".html"}
+        type_map = {
+            "json": [("JSON files", "*.json"), ("All files", "*.*")],
+            "csv":  [("CSV files", "*.csv"), ("All files", "*.*")],
+            "markdown": [("Markdown files", "*.md"), ("All files", "*.*")],
+            "html": [("HTML files", "*.html"), ("All files", "*.*")],
+        }
         ext = ext_map.get(fmt, ".txt")
         path = filedialog.asksaveasfilename(
             defaultextension=ext,
-            filetypes=[("All files", "*.*")],
+            filetypes=type_map.get(fmt, [("All files", "*.*")]),
             initialfile=f"natbench_results{ext}",
         )
         if path:
@@ -1503,15 +2226,28 @@ class NatBenchApp:
         self._lbl_status.config(text=text, fg=color)
 
     def _on_export(self) -> None:
-        self._notebook.select(2)
+        self._notebook.select(3)
         self._refresh_preview()
 
     def _show_about(self) -> None:
-        self._notebook.select(3)
+        self._notebook.select(4)
 
     def _open_url(self, url: str) -> None:
-        import webbrowser
-        webbrowser.open(url)
+        import sys, subprocess
+        try:
+            if sys.platform.startswith("linux"):
+                subprocess.Popen(["xdg-open", url], stderr=subprocess.DEVNULL)
+            elif sys.platform == "darwin":
+                subprocess.Popen(["open", url])
+            else:
+                import webbrowser
+                webbrowser.open(url)
+        except Exception:
+            try:
+                import webbrowser
+                webbrowser.open(url)
+            except Exception:
+                pass
 
     def _check_for_updates_gui(self) -> None:
         """Check GitHub for a newer release and show a messagebox."""
@@ -1541,6 +2277,208 @@ class NatBenchApp:
 
         t = threading.Thread(target=_worker, daemon=True)
         t.start()
+
+    # ------------------------------------------------------------------
+    # Traceroute helpers
+    # ------------------------------------------------------------------
+
+    def _trace_use_selected(self) -> None:
+        """Copy the IP of the currently selected result row into the traceroute host field."""
+        stat = self._get_selected_stat()
+        if stat:
+            self._trace_host_var.set(stat.ip or stat.name)
+            self._notebook.select(5)
+
+    def _stop_traceroute(self) -> None:
+        self._trace_running = False
+        if self._trace_proc:
+            try:
+                self._trace_proc.kill()
+            except Exception:
+                pass
+        self._trace_btn.config(state="normal")
+        self._trace_stop_btn.config(state="disabled")
+
+    def _run_traceroute(self) -> None:
+        import sys, shutil, subprocess, threading as _th
+
+        host = self._trace_host_var.get().strip()
+        if not host:
+            messagebox.showwarning("NatBench", "Enter a host or IP address.")
+            return
+
+        self._trace_text.config(state="normal")
+        self._trace_text.delete("1.0", "end")
+        self._trace_text.config(state="disabled")
+
+        self._trace_btn.config(state="disabled")
+        self._trace_stop_btn.config(state="normal")
+        self._trace_running = True
+
+        # --- choose backend ---
+        af = self._trace_af_var.get() if hasattr(self, "_trace_af_var") else "auto"
+        if sys.platform.startswith("linux") or sys.platform == "darwin":
+            af_flag = ["-4"] if af == "ipv4" else (["-6"] if af == "ipv6" else [])
+        else:
+            af_flag = []
+
+        if sys.platform.startswith("win"):
+            cmd = ["tracert", "-d", host]
+            use_subprocess = True
+        elif shutil.which("traceroute"):
+            cmd = ["traceroute"] + af_flag + ["-m", "30", host]
+            use_subprocess = True
+        elif shutil.which("tracepath"):
+            cmd = ["tracepath"] + af_flag + [host]
+            use_subprocess = True
+        elif shutil.which("mtr"):
+            cmd = ["mtr"] + af_flag + ["--report", "--report-cycles", "3", host]
+            use_subprocess = True
+        else:
+            cmd = None
+            use_subprocess = False  # fall back to Python raw-socket impl
+
+        header = f"Traceroute → {host}\n{'─' * 62}\n"
+        self._trace_append(header, "header")
+
+        def _subprocess_worker():
+            try:
+                proc = subprocess.Popen(
+                    cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, bufsize=1,
+                )
+                self._trace_proc = proc
+                for line in proc.stdout:
+                    if not self._trace_running:
+                        proc.kill()
+                        break
+                    line = line.rstrip()
+                    tag = "timeout" if ("* * *" in line or line.strip() == "*") else "hop"
+                    self._root.after(0, lambda l=line, t=tag: self._trace_append(l + "\n", t))
+                proc.wait()
+                if self._trace_running:
+                    self._root.after(0, lambda: self._trace_append("\n─── Done ───\n", "done"))
+            except Exception as exc:
+                self._root.after(0, lambda: self._trace_append(f"Error: {exc}\n", "error"))
+            finally:
+                self._trace_running = False
+                self._root.after(0, lambda: (
+                    self._trace_btn.config(state="normal"),
+                    self._trace_stop_btn.config(state="disabled"),
+                ))
+
+        def _python_worker():
+            import socket, time
+            try:
+                # Determine socket address family from AF preference
+                if af == "ipv6":
+                    sock_af = socket.AF_INET6
+                    icmp_proto_name = "ipv6-icmp"
+                else:
+                    sock_af = socket.AF_INET
+                    icmp_proto_name = "icmp"
+
+                try:
+                    if sock_af == socket.AF_INET6:
+                        infos = socket.getaddrinfo(host, None, socket.AF_INET6)
+                        dest_ip = infos[0][4][0] if infos else None
+                        if not dest_ip:
+                            raise socket.gaierror("No IPv6 address found")
+                    else:
+                        dest_ip = socket.gethostbyname(host)
+                except socket.gaierror as e:
+                    self._root.after(0, lambda: self._trace_append(
+                        f"Cannot resolve '{host}': {e}\n", "error"))
+                    return
+
+                self._root.after(0, lambda: self._trace_append(
+                    f"Target: {dest_ip}  (Python raw-socket mode)\n\n", "header"))
+
+                try:
+                    icmp_proto = socket.getprotobyname(icmp_proto_name)
+                except OSError:
+                    icmp_proto = socket.getprotobyname("icmp")
+                try:
+                    recv_sock = socket.socket(
+                        sock_af, socket.SOCK_RAW, icmp_proto)
+                    recv_sock.settimeout(3.0)
+                except PermissionError:
+                    self._root.after(0, lambda: self._trace_append(
+                        "No raw-socket permission. Options:\n"
+                        "  • Run NatBench with sudo\n"
+                        "  • Install traceroute:  sudo pacman -S traceroute\n"
+                        "  •                      sudo apt install traceroute\n"
+                        "  •                      sudo dnf install traceroute\n",
+                        "error"))
+                    return
+
+                for ttl in range(1, 31):
+                    if not self._trace_running:
+                        break
+                    send_sock = socket.socket(
+                        socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+                    send_sock.setsockopt(socket.IPPROTO_IP, socket.IP_TTL, ttl)
+                    t0 = time.perf_counter()
+                    hop_ip = None
+                    rtt_ms = None
+                    try:
+                        send_sock.sendto(b"\x00" * 40, (dest_ip, 33434 + ttl))
+                        data, addr = recv_sock.recvfrom(512)
+                        hop_ip = addr[0]
+                        rtt_ms = (time.perf_counter() - t0) * 1000
+                    except socket.timeout:
+                        pass
+                    except Exception:
+                        pass
+                    finally:
+                        send_sock.close()
+
+                    if hop_ip:
+                        try:
+                            name = socket.gethostbyaddr(hop_ip)[0]
+                            hop_str = f"{ttl:3d}  {name} ({hop_ip})"
+                        except Exception:
+                            hop_str = f"{ttl:3d}  {hop_ip}"
+                        line = f"{hop_str}   {rtt_ms:.1f} ms"
+                        reached = (hop_ip == dest_ip)
+                        tag = "done" if reached else "hop"
+                        self._root.after(0, lambda l=line, t=tag: self._trace_append(l + "\n", t))
+                        if reached:
+                            self._root.after(0, lambda: self._trace_append(
+                                "\n─── Destination reached ───\n", "done"))
+                            break
+                    else:
+                        line = f"{ttl:3d}  * * *  (timeout)"
+                        self._root.after(0, lambda l=line: self._trace_append(l + "\n", "timeout"))
+
+                recv_sock.close()
+                if self._trace_running:
+                    self._root.after(0, lambda: self._trace_append("\n─── Done ───\n", "done"))
+
+            except Exception as exc:
+                self._root.after(0, lambda: self._trace_append(f"Error: {exc}\n", "error"))
+            finally:
+                self._trace_running = False
+                self._root.after(0, lambda: (
+                    self._trace_btn.config(state="normal"),
+                    self._trace_stop_btn.config(state="disabled"),
+                ))
+
+        worker = _subprocess_worker if use_subprocess else _python_worker
+        _th.Thread(target=worker, daemon=True).start()
+
+    def _trace_append(self, text: str, tag: str = "hop") -> None:
+        self._trace_text.config(state="normal")
+        self._trace_text.insert("end", text, tag)
+        self._trace_text.see("end")
+        self._trace_text.config(state="disabled")
+
+    def _ctx_traceroute(self) -> None:
+        stat = self._get_selected_stat()
+        if stat:
+            self._trace_host_var.set(stat.ip or stat.name)
+            self._notebook.select(5)
+            self._run_traceroute()
 
     # ------------------------------------------------------------------
     # Run
