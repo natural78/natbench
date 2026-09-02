@@ -1068,6 +1068,489 @@ SERVER_DB: list[dict] = [
         "tags": ["anycast"],
         "description_en": "Dyn/Oracle DNS 216.146.36.36 — secondary resolver.",
     },
+
+    # -----------------------------------------------------------------------
+    # Digitalcourage e.V. (Germany, non-profit)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Digitalcourage DNS Primary",
+        "ip4": "46.182.19.48",
+        "ip6": "2a02:2970:1002::18",
+        "doh_url": "https://digitalcourage.de/dns-query",
+        "dot_host": "dns2.digitalcourage.de",
+        "dot_port": 853,
+        "port": 53,
+        "country": "DE",
+        "operator": "Digitalcourage e.V.",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "Digitalcourage e.V. 46.182.19.48 — German non-profit, no logging, DNSSEC.",
+    },
+    {
+        "name": "Digitalcourage DNS Secondary",
+        "ip4": "89.233.43.71",
+        "ip6": "2a01:3a0:53:53::0",
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "DE",
+        "operator": "Digitalcourage e.V. / Censurfridns.dk",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "Digitalcourage / UncensoredDNS 89.233.43.71 — no logging, uncensored.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Censurfridns.dk (UncensoredDNS, Denmark)
+    # -----------------------------------------------------------------------
+    {
+        "name": "UncensoredDNS Primary",
+        "ip4": "91.239.100.100",
+        "ip6": "2001:67c:28a4::",
+        "doh_url": None,
+        "dot_host": "unicast.censurfridns.dk",
+        "dot_port": 853,
+        "port": 53,
+        "country": "DK",
+        "operator": "Censurfridns.dk",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "UncensoredDNS 91.239.100.100 — Danish uncensored resolver, no logging.",
+    },
+
+    # -----------------------------------------------------------------------
+    # CCC e.V. (Chaos Computer Club, Germany)
+    # -----------------------------------------------------------------------
+    {
+        "name": "CCC DNS",
+        "ip4": "213.73.91.35",
+        "ip6": "2001:4b98:dc0:41:216:3eff:fe27:3d3f",
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "DE",
+        "operator": "Chaos Computer Club e.V.",
+        "tags": ["community", "no-log"],
+        "description_en": "CCC e.V. 213.73.91.35 — German hacker community resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Freifunk München (Germany)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Freifunk München DNS",
+        "ip4": "5.1.66.255",
+        "ip6": "2a06:8782:ffbb:1337::1",
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "DE",
+        "operator": "Freifunk München e.V.",
+        "tags": ["community", "no-log"],
+        "description_en": "Freifunk München 5.1.66.255 — German community-run resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # CIRA Canadian Shield (additional IPs — .20 subnet)
+    # -----------------------------------------------------------------------
+    {
+        "name": "CIRA Canadian Shield Private 2",
+        "ip4": "149.112.121.20",
+        "ip6": "2620:10a:80bb::20",
+        "doh_url": "https://private.canadianshield.cira.ca/dns-query",
+        "dot_host": "private.canadianshield.cira.ca",
+        "dot_port": 853,
+        "port": 53,
+        "country": "CA",
+        "operator": "CIRA",
+        "tags": ["canada", "dnssec", "no-log"],
+        "description_en": "CIRA Canadian Shield Private 149.112.121.20 — second anycast node, no logging, DNSSEC.",
+    },
+    {
+        "name": "CIRA Canadian Shield Protected 2",
+        "ip4": "149.112.122.20",
+        "ip6": "2620:10a:80bc::20",
+        "doh_url": "https://protected.canadianshield.cira.ca/dns-query",
+        "dot_host": "protected.canadianshield.cira.ca",
+        "dot_port": 853,
+        "port": 53,
+        "country": "CA",
+        "operator": "CIRA",
+        "tags": ["canada", "malware", "dnssec", "no-log"],
+        "description_en": "CIRA Canadian Shield Protected 149.112.122.20 — malware/phishing protection, second node.",
+    },
+
+    # -----------------------------------------------------------------------
+    # RethinkDNS (privacy)
+    # -----------------------------------------------------------------------
+    {
+        "name": "RethinkDNS Primary",
+        "ip4": "76.76.2.0",
+        "ip6": None,
+        "doh_url": "https://basic.rethinkdns.com/dns-query",
+        "dot_host": "basic.rethinkdns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "US",
+        "operator": "RethinkDNS",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "RethinkDNS 76.76.2.0 — privacy-focused, no logging.",
+    },
+    {
+        "name": "RethinkDNS Secondary",
+        "ip4": "76.76.10.0",
+        "ip6": None,
+        "doh_url": "https://basic.rethinkdns.com/dns-query",
+        "dot_host": "basic.rethinkdns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "US",
+        "operator": "RethinkDNS",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "RethinkDNS 76.76.10.0 — secondary resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # BlahDNS (privacy, multiple PoPs)
+    # -----------------------------------------------------------------------
+    {
+        "name": "BlahDNS Germany",
+        "ip4": "78.46.244.143",
+        "ip6": "2a01:4f8:c17:ec67::1",
+        "doh_url": "https://doh-de.blahdns.com/dns-query",
+        "dot_host": "dot-de.blahdns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "DE",
+        "operator": "BlahDNS",
+        "tags": ["no-log", "adblock", "dnssec"],
+        "description_en": "BlahDNS 78.46.244.143 — no-log, ad-blocking resolver hosted in Germany.",
+    },
+    {
+        "name": "BlahDNS Finland",
+        "ip4": "95.216.212.177",
+        "ip6": "2a01:4f9:c010:43ce::1",
+        "doh_url": "https://doh-fi.blahdns.com/dns-query",
+        "dot_host": "dot-fi.blahdns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "FI",
+        "operator": "BlahDNS",
+        "tags": ["no-log", "adblock", "dnssec"],
+        "description_en": "BlahDNS 95.216.212.177 — no-log, ad-blocking resolver hosted in Finland.",
+    },
+    {
+        "name": "BlahDNS Japan",
+        "ip4": "108.61.201.119",
+        "ip6": "2001:19f0:7001:1ded:5400:2ff:fe90:7894",
+        "doh_url": "https://doh-jp.blahdns.com/dns-query",
+        "dot_host": "dot-jp.blahdns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "JP",
+        "operator": "BlahDNS",
+        "tags": ["no-log", "adblock", "dnssec", "asia"],
+        "description_en": "BlahDNS 108.61.201.119 — no-log, ad-blocking resolver hosted in Japan.",
+    },
+
+    # -----------------------------------------------------------------------
+    # AhaDNS (privacy, multiple PoPs)
+    # -----------------------------------------------------------------------
+    {
+        "name": "AhaDNS Netherlands",
+        "ip4": "5.2.75.75",
+        "ip6": "2a04:52c0:101:75::75",
+        "doh_url": "https://doh.nl.ahadns.net/dns-query",
+        "dot_host": "dot.nl.ahadns.net",
+        "dot_port": 853,
+        "port": 53,
+        "country": "NL",
+        "operator": "AhaDNS",
+        "tags": ["no-log", "adblock", "dnssec"],
+        "description_en": "AhaDNS 5.2.75.75 — no-log, DNSSEC, ad-blocking resolver in Netherlands.",
+    },
+    {
+        "name": "AhaDNS Norway",
+        "ip4": "89.233.43.71",
+        "ip6": "2a01:3a0:53:53::0",
+        "doh_url": "https://doh.no.ahadns.net/dns-query",
+        "dot_host": "dot.no.ahadns.net",
+        "dot_port": 853,
+        "port": 53,
+        "country": "NO",
+        "operator": "AhaDNS",
+        "tags": ["no-log", "adblock", "dnssec"],
+        "description_en": "AhaDNS 89.233.43.71 — no-log, DNSSEC, ad-blocking resolver in Norway.",
+    },
+
+    # -----------------------------------------------------------------------
+    # FDN (French Data Network)
+    # -----------------------------------------------------------------------
+    {
+        "name": "FDN Primary",
+        "ip4": "80.67.169.12",
+        "ip6": "2001:910:800::12",
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "FR",
+        "operator": "FDN (French Data Network)",
+        "tags": ["no-log", "community"],
+        "description_en": "FDN 80.67.169.12 — French non-profit ISP, uncensored resolver.",
+    },
+    {
+        "name": "FDN Secondary",
+        "ip4": "80.67.169.40",
+        "ip6": "2001:910:800::40",
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "FR",
+        "operator": "FDN (French Data Network)",
+        "tags": ["no-log", "community"],
+        "description_en": "FDN 80.67.169.40 — secondary resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Snopyta (Finland, privacy)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Snopyta DNS",
+        "ip4": "95.216.229.234",
+        "ip6": "2a01:4f9:2b:1919::9",
+        "doh_url": "https://fi.doh.dns.snopyta.org/dns-query",
+        "dot_host": "fi.dot.dns.snopyta.org",
+        "dot_port": 853,
+        "port": 53,
+        "country": "FI",
+        "operator": "Snopyta",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "Snopyta DNS 95.216.229.234 — Finnish privacy-focused resolver, no logging.",
+    },
+
+    # -----------------------------------------------------------------------
+    # OpenNIC (additional nodes)
+    # -----------------------------------------------------------------------
+    {
+        "name": "OpenNIC EU-1",
+        "ip4": "94.247.43.254",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "FR",
+        "operator": "OpenNIC Project (community)",
+        "tags": ["community", "no-log"],
+        "description_en": "OpenNIC community resolver (EU/France) — supports OpenNIC TLDs.",
+    },
+    {
+        "name": "OpenNIC AU-1",
+        "ip4": "150.101.100.1",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "AU",
+        "operator": "OpenNIC Project (community)",
+        "tags": ["community", "no-log"],
+        "description_en": "OpenNIC community resolver (Australia) — supports OpenNIC TLDs.",
+    },
+
+    # -----------------------------------------------------------------------
+    # TWNIC (Taiwan Network Information Center)
+    # -----------------------------------------------------------------------
+    {
+        "name": "TWNIC Primary",
+        "ip4": "101.101.101.101",
+        "ip6": "2001:de4::101",
+        "doh_url": "https://dns.twnic.tw/dns-query",
+        "dot_host": None,
+        "port": 53,
+        "country": "TW",
+        "operator": "TWNIC (Taiwan Network Information Center)",
+        "tags": ["no-log", "dnssec", "anycast", "asia", "fast"],
+        "description_en": "TWNIC 101.101.101.101 — Taiwanese public resolver, no logging, DNSSEC.",
+    },
+    {
+        "name": "TWNIC Secondary",
+        "ip4": "101.102.103.104",
+        "ip6": "2001:de4::102",
+        "doh_url": "https://dns.twnic.tw/dns-query",
+        "dot_host": None,
+        "port": 53,
+        "country": "TW",
+        "operator": "TWNIC (Taiwan Network Information Center)",
+        "tags": ["no-log", "dnssec", "anycast", "asia"],
+        "description_en": "TWNIC 101.102.103.104 — secondary resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # CNNIC Public DNS (China)
+    # -----------------------------------------------------------------------
+    {
+        "name": "CNNIC DNS Primary",
+        "ip4": "1.2.4.8",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "CN",
+        "operator": "CNNIC (China Internet Network Information Center)",
+        "tags": ["china", "fast", "anycast"],
+        "description_en": "CNNIC Public DNS 1.2.4.8 — operated by China Internet NIC.",
+    },
+    {
+        "name": "CNNIC DNS Secondary",
+        "ip4": "210.2.4.8",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "CN",
+        "operator": "CNNIC (China Internet Network Information Center)",
+        "tags": ["china", "fast"],
+        "description_en": "CNNIC Public DNS 210.2.4.8 — secondary resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # KDDI Japan
+    # -----------------------------------------------------------------------
+    {
+        "name": "KDDI Japan DNS",
+        "ip4": "203.148.64.193",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "JP",
+        "operator": "KDDI Corporation",
+        "tags": ["asia"],
+        "description_en": "KDDI 203.148.64.193 — Japanese ISP public resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # IIJ Japan (Internet Initiative Japan)
+    # -----------------------------------------------------------------------
+    {
+        "name": "IIJ Japan DNS",
+        "ip4": "103.2.57.5",
+        "ip6": None,
+        "doh_url": "https://public.dns.iij.jp/dns-query",
+        "dot_host": "public.dns.iij.jp",
+        "dot_port": 853,
+        "port": 53,
+        "country": "JP",
+        "operator": "Internet Initiative Japan (IIJ)",
+        "tags": ["asia", "dnssec", "no-log"],
+        "description_en": "IIJ 103.2.57.5 — Japanese ISP public resolver with DoH/DoT.",
+    },
+
+    # -----------------------------------------------------------------------
+    # OpenDNS FamilyShield Secondary
+    # -----------------------------------------------------------------------
+    {
+        "name": "OpenDNS FamilyShield Secondary",
+        "ip4": "208.67.220.123",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "US",
+        "operator": "Cisco / OpenDNS",
+        "tags": ["malware", "family", "anycast"],
+        "description_en": "OpenDNS FamilyShield 208.67.220.123 — secondary family-safe resolver.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Alternate DNS (original IPs from task description)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Alternate DNS Legacy Primary",
+        "ip4": "198.101.242.72",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "US",
+        "operator": "Alternate DNS",
+        "tags": ["adblock"],
+        "description_en": "Alternate DNS 198.101.242.72 — legacy ad-blocking resolver IP.",
+    },
+    {
+        "name": "Alternate DNS Legacy Secondary",
+        "ip4": "23.253.163.53",
+        "ip6": None,
+        "doh_url": None,
+        "dot_host": None,
+        "port": 53,
+        "country": "US",
+        "operator": "Alternate DNS",
+        "tags": ["adblock"],
+        "description_en": "Alternate DNS 23.253.163.53 — legacy secondary ad-blocking resolver IP.",
+    },
+
+    # -----------------------------------------------------------------------
+    # NextDNS (DoH/DoT only — already present, skip duplicate ip4=None entry)
+    # dns0.eu (European, privacy)
+    # -----------------------------------------------------------------------
+    {
+        "name": "dns0.eu",
+        "ip4": "193.110.81.0",
+        "ip6": "2a0f:fc80::",
+        "doh_url": "https://dns0.eu/",
+        "dot_host": "dns0.eu",
+        "dot_port": 853,
+        "port": 53,
+        "country": "EU",
+        "operator": "dns0.eu",
+        "tags": ["no-log", "dnssec", "privacy"],
+        "description_en": "dns0.eu 193.110.81.0 — European privacy-first resolver, no logging, DNSSEC.",
+    },
+    {
+        "name": "dns0.eu KIDS",
+        "ip4": "193.110.81.1",
+        "ip6": "2a0f:fc80::1",
+        "doh_url": "https://kids.dns0.eu/",
+        "dot_host": "kids.dns0.eu",
+        "dot_port": 853,
+        "port": 53,
+        "country": "EU",
+        "operator": "dns0.eu",
+        "tags": ["family", "no-log", "dnssec"],
+        "description_en": "dns0.eu KIDS 193.110.81.1 — child-safe filtering, no logging.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Wikimedia DNS (non-profit)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Wikimedia DNS",
+        "ip4": None,
+        "ip6": None,
+        "doh_url": "https://wikimedia-dns.org/dns-query",
+        "dot_host": "wikimedia-dns.org",
+        "dot_port": 853,
+        "port": 53,
+        "country": "US",
+        "operator": "Wikimedia Foundation",
+        "tags": ["no-log", "dnssec"],
+        "description_en": "Wikimedia DNS — non-profit DoH/DoT resolver, no logging, DNSSEC.",
+    },
+
+    # -----------------------------------------------------------------------
+    # Cloudflare for Families (malware+adult) — additional entry beyond 1.1.1.3
+    # (1.1.1.3 already present as 'Cloudflare Family', this is the DoH alias)
+    # -----------------------------------------------------------------------
+    {
+        "name": "Cloudflare Family DoH",
+        "ip4": None,
+        "ip6": None,
+        "doh_url": "https://family.cloudflare-dns.com/dns-query",
+        "dot_host": "family.cloudflare-dns.com",
+        "dot_port": 853,
+        "port": 53,
+        "country": "US",
+        "operator": "Cloudflare Inc.",
+        "tags": ["malware", "family", "dnssec", "anycast", "fast", "no-log"],
+        "description_en": "Cloudflare for Families DoH endpoint — blocks malware and adult content.",
+    },
 ]
 
 

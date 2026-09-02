@@ -61,6 +61,7 @@ Documentation = "https://natural.yt/natbench/docs"
 [project.scripts]
 natbench     = "natbench.cli:main"
 natbench-gui = "natbench.gui:main"
+natbench-web = "natbench.web_ui:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "natbench.__version__.__version__" }
