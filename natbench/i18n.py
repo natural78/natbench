@@ -213,3 +213,39 @@ def _load_file(lang: str) -> dict[str, str]:
 def clear_cache() -> None:
     """Clear the in-process locale cache (useful for testing or hot-reload)."""
     _cache.clear()
+
+
+# ---------------------------------------------------------------------------
+# Convenience constants expected by CLI / GUI
+# ---------------------------------------------------------------------------
+
+#: All language codes that ship with the package.
+SUPPORTED_LANGS: list[str] = [
+    "bg", "cs", "da", "de", "el", "en", "es", "fi", "fr",
+    "hr", "hu", "it", "nl", "no", "pl", "pt", "ro", "ru",
+    "sv", "tr", "uk",
+]
+
+#: Map language code → human-readable native name.
+LANG_NAMES: dict[str, str] = {
+    "bg": "Български",   "cs": "Čeština",     "da": "Dansk",
+    "de": "Deutsch",     "el": "Ελληνικά",    "en": "English",
+    "es": "Español",     "fi": "Suomi",       "fr": "Français",
+    "hr": "Hrvatski",    "hu": "Magyar",      "it": "Italiano",
+    "nl": "Nederlands",  "no": "Norsk",       "pl": "Polski",
+    "pt": "Português",   "ro": "Română",      "ru": "Русский",
+    "sv": "Svenska",     "tr": "Türkçe",      "uk": "Українська",
+}
+
+
+def score_label(score: float) -> str:
+    """Return a short human-readable quality label for a 0–100 score."""
+    if score >= 90:
+        return "Excellent"
+    if score >= 75:
+        return "Good"
+    if score >= 55:
+        return "Fair"
+    if score >= 35:
+        return "Poor"
+    return "Bad"
