@@ -91,7 +91,13 @@ except ImportError:
 # Version
 # ---------------------------------------------------------------------------
 
-__version__ = "1.0.0"
+try:
+    from .__version__ import __version__
+except Exception:
+    try:
+        from natbench.__version__ import __version__
+    except Exception:
+        __version__ = "1.1.0"
 
 # ---------------------------------------------------------------------------
 # ASCII logo
